@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jponge/vertx-junit5.svg?branch=master)](https://travis-ci.org/jponge/vertx-junit5)
+
 # Vert.x JUnit 5 integration
 
 This module offers integration and support for writing Vert.x tests with JUnit 5.

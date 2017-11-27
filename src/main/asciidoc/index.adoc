@@ -1,0 +1,182 @@
+= Vert.x JUnit 5 integration
+
+This module offers integration and support for writing Vert.x tests with JUnit 5.
+
+== Use it in your build
+
+* `groupId`: `io.vertx`
+* `artifactId`: `vertx-junit5`
+* `version`: (current Vert.x release or SNAPSHOT)
+
+== Why testing asychronous code is different
+
+Testing asynchronous operations requires more tools than what a test harness like JUnit provides.
+Let us consider a typical Vert.x creation of a HTTP server, and put it into a JUnit test:
+
+[source,java]
+----
+@Test
+void start_server() {
+  Vertx vertx = Vertx.vertx();
+  vertx.createHttpServer()
+    .requestHandler(req -> req.response().end("Ok"))
+    .listen(16969, ar -> {
+      // (we can check here if the server started or not)
+    });
+}
+----
+
+There are issues here since `listen` does not block as it tries to start a HTTP server asynchronously.
+We cannot simply assume that the server has properly started upon a `listen` invocation return.
+Also:
+
+1. the callback passed to `listen` will be executed from a Vert.x event loop thread, which is different from the thread that runs the JUnit test, and
+2. right after calling `listen`, the test exits and is being considered to be passed, while the HTTP server may not even have finished starting, and
+3. since the `listen` callback executes on a different thread than the one executing the test, then any exception such as one thrown by a failed assertion cannot be capture by the JUnit runner.
+
+== A test context for asynchronous executions
+
+The first contribution of this module is a `VertxTestContext` object that:
+
+1. allows waiting for operations in other threads to notify of completion, and
+2. supports assertion failures to be received to mark a test as failed.
+
+Here is a very basic usage:
+
+[source,java]
+----
+@Test
+void start_http_server() throws InterruptedException {
+  VertxTestContext testContext = new VertxTestContext();
+
+  Vertx vertx = Vertx.vertx();
+  vertx.createHttpServer()
+    .requestHandler(req -> req.response().end())
+    .listen(16969, testContext.succeeding(ar -> testContext.completeNow())); // <1>
+
+  assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue(); // <2>
+}
+----
+<1> `succeeding` returns an asynchronous result handler that is expected to succeed, and `completeNow` makes the test pass.
+<2> `awaitCompletion` has the semantics of a `CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
+
+== Use any assertion library
+
+This module does not make any assumption on the assertion library that you should be using.
+You can use plain JUnit assertions, http://joel-costigliola.github.io/assertj/[AssertJ], etc.
+
+To make assertions in asynchronous code and make sure that `VertxTestContext` is notified of potential failures, you need to wrap them with a call to `verify`:
+
+[source,java]
+----
+WebClient client = WebClient.create(vertx);
+
+client.get(8080, "localhost", "/")
+  .as(BodyCodec.string())
+  .send(testContext.succeeding(response -> testContext.verify(() -> {
+    assertThat(response.result().body()).isEqualTo("Plop");
+    testContext.completeNow();
+  })));
+----
+
+The useful methods in `VertxTestContext` are the following:
+
+* `completeNow()` and `failNow(Throwable)` to notify of a success or failure
+* `succeeding()` and `succeeding(Handler<AsyncResult<T>>)` to provide `Handler<AsyncResult<T>>` handlers that expect a success, and optionally pass the result to another callback
+* `failing()` and `failing(Handler<AsyncResult<T>>)` to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
+* `verify(Runnable)` to perform assertions, any exception thrown from the `Runnable` is considered as a test failure.
+
+== Checkpoint when there are multiple success conditions
+
+Many tests can be marked as passed by simply calling `completeNow()` at some point of the execution.
+That being said there are also many cases where the success of a test depends on different asynchronous parts to be validated.
+
+You can use checkpoints to flag some execution points to be passed.
+A checkpoint can require a single flagging, or multiple flags.
+When all checkpoints have been flagged, then the corresponding `VertxTestContext` makes the test pass.
+
+Here is an example with checkpoints on the HTTP server being started, 10 HTTP requests having being responded, and 10 HTTP client requests having been made:
+
+[source,java]
+----
+Checkpoint serverStarted = testContext.checkpoint();
+Checkpoint requestsServed = testContext.checkpoint(10);
+Checkpoint responsesReceived = testContext.checkpoint(10);
+
+vertx.createHttpServer()
+  .requestHandler(req -> {
+    req.response().end("Ok");
+    requestsServed.flag();
+  })
+  .listen(8080, ar -> {
+    if (ar.failed()) {
+      testContext.failNow(ar.cause());
+    } else {
+      serverStarted.flag();
+    }
+  });
+
+WebClient client = WebClient.create(vertx);
+for (int i = 0; i < 10; i++) {
+  client.get(8080, "localhost", "/")
+    .as(BodyCodec.string())
+    .send(ar -> {
+      if (ar.failed()) {
+        testContext.failNow(ar.cause());
+      } else {
+        testContext.verify(() -> assertThat(ar.result().body()).isEqualTo("Ok"));
+        responsesReceived.flag();
+      }
+    });
+}
+----
+
+== Integration with JUnit 5
+
+JUnit 5 provides a different model compared to the previous versions.
+
+The Vert.x integration is primarily done using the `VertxExtension` class, and using test parameter injection of `Vertx` and `VertxTestContext` instances:
+
+[source,java]
+----
+@ExtendWith(VertxExtension.class)
+class SomeTest {
+
+  @Test
+  void some_test(Vertx vertx, VertxTestContext testContext) {
+    // (...)
+  }
+}
+----
+
+The test is automatically wrapped around the `VertxTestContext` instance lifecycle, so you don't need to insert `awaitCompletion` calls yourself:
+
+[source,java]
+----
+@RepeatedTest(3)
+void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
+  vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
+    WebClient client = WebClient.create(vertx);
+    client.get(8080, "localhost", "/")
+      .as(BodyCodec.string())
+      .send(testContext.succeeding(response -> testContext.verify(() -> {
+        assertThat(response.result().body()).isEqualTo("Plop");
+        testContext.completeNow();
+      })));
+  }));
+}
+----
+
+NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
+
+It is also possible to customize the default `VertxTestContext` timeout using the `@Timeout(milliseconds)` annotation either on test classes or methods:
+
+[source,java]
+----
+@Test
+@Timeout(10_000) // <1>
+void some_test(Vertx vertx, VertxTestContext context) {
+  // (...)
+}
+----
+<1> That is 10 seconds.

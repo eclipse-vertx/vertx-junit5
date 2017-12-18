@@ -76,7 +76,7 @@ class IntegrationTest {
         client.get(8080, "localhost", "/")
           .as(BodyCodec.string())
           .send(testContext.succeeding(response -> testContext.verify(() -> {
-            assertThat(response.result().body()).isEqualTo("Plop");
+            assertThat(response.body()).isEqualTo("Plop");
             testContext.completeNow();
           })));
       }));
@@ -96,7 +96,7 @@ class IntegrationTest {
         client.get(8080, "localhost", "/")
           .as(BodyCodec.string())
           .send(testContext.succeeding(response -> testContext.verify(() -> {
-            assertThat(response.result().body()).isEqualTo("Plop");
+            assertThat(response.body()).isEqualTo("Plop");
             testContext.completeNow();
           })));
       }));

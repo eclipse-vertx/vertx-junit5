@@ -103,7 +103,7 @@ class VertxTestContextTest {
     AtomicBoolean checker = new AtomicBoolean(false);
     VertxTestContext context = new VertxTestContext();
 
-    Handler<AsyncResult<Object>> nextHandler = ar -> {
+    Handler<Throwable> nextHandler = ar -> {
       checker.set(true);
       context.completeNow();
     };

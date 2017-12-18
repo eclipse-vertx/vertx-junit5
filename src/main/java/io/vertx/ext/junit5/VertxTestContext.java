@@ -35,7 +35,7 @@ public final class VertxTestContext {
 
   // ........................................................................................... //
 
-  public boolean failed() {
+  public synchronized boolean failed() {
     return throwableReference != null;
   }
 
@@ -43,7 +43,7 @@ public final class VertxTestContext {
     return throwableReference;
   }
 
-  public boolean completed() {
+  public synchronized boolean completed() {
     return !failed() && releaseLatch.getCount() == 0;
   }
 

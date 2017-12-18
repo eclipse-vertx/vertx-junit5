@@ -25,11 +25,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
 class VertxTestContextTest {
+
+  @Test
+  void fail_with_null() {
+    VertxTestContext context = new VertxTestContext();
+    assertThatThrownBy(() -> context.failNow(null))
+      .isInstanceOf(NullPointerException.class)
+      .hasMessage("The exception cannot be null");
+  }
 
   @Test
   void check_async_assert() throws InterruptedException {

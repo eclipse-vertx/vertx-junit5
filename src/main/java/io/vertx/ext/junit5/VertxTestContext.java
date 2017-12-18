@@ -20,6 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -53,6 +54,7 @@ public final class VertxTestContext {
   }
 
   public synchronized void failNow(Throwable t) {
+    Objects.requireNonNull(t, "The exception cannot be null");
     throwableReference = t;
     releaseLatch.countDown();
   }

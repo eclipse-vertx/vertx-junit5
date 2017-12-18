@@ -43,7 +43,7 @@ public final class VertxTestContext {
   }
 
   public boolean completed() {
-    return !failed();
+    return !failed() && releaseLatch.getCount() == 0;
   }
 
   // ........................................................................................... //
@@ -79,16 +79,21 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   public <T> Handler<AsyncResult<T>> succeeding() {
+    Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (!ar.succeeded()) {
         failNow(ar.cause());
+      } else {
+        checkpoint.flag();
       }
     };
   }
 
   public <T> Handler<AsyncResult<T>> succeeding(Handler<AsyncResult<T>> nextHandler) {
+    Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
+        checkpoint.flag();
         nextHandler.handle(ar);
       } else {
         failNow(ar.cause());
@@ -97,18 +102,23 @@ public final class VertxTestContext {
   }
 
   public <T> Handler<AsyncResult<T>> failing() {
+    Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
         failNow(new AssertionError("The asynchronous result was expected to failNow"));
+      } else {
+        checkpoint.flag();
       }
     };
   }
 
   public <T> Handler<AsyncResult<T>> failing(Handler<AsyncResult<T>> nextHandler) {
+    Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
         failNow(new AssertionError("The asynchronous result was expected to failNow"));
       } else {
+        checkpoint.flag();
         nextHandler.handle(ar);
       }
     };

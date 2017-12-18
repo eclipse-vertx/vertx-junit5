@@ -72,7 +72,7 @@ public final class VertxTestContext {
     return checkpoint(1);
   }
 
-  public Checkpoint checkpoint(int requiredNumberOfPasses) {
+  public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
     CountingCheckpoint checkpoint = new CountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     return checkpoint;

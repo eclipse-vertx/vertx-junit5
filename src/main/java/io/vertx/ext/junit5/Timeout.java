@@ -20,6 +20,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
@@ -28,4 +29,5 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface Timeout {
   int value();
+  TimeUnit timeUnit() default TimeUnit.MILLISECONDS;
 }

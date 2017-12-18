@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -57,7 +59,7 @@ class VertxExtensionTest {
   class SpecifyTimeout {
 
     @Test
-    @Timeout(5000)
+    @Timeout(value = 5, timeUnit = TimeUnit.SECONDS)
     void a(VertxTestContext context) throws InterruptedException {
       Thread.sleep(50);
       context.completeNow();

@@ -70,11 +70,13 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
     TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
     if (extensionContext.getRequiredTestMethod().isAnnotationPresent(Timeout.class)) {
-      timeoutDuration = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class).value();
-      timeoutUnit = TimeUnit.MILLISECONDS;
+      Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
+      timeoutDuration = annotation.value();
+      timeoutUnit = annotation.timeUnit();
     } else if (extensionContext.getRequiredTestClass().isAnnotationPresent(Timeout.class)) {
-      timeoutDuration = extensionContext.getRequiredTestClass().getAnnotation(Timeout.class).value();
-      timeoutUnit = TimeUnit.MILLISECONDS;
+      Timeout annotation = extensionContext.getRequiredTestClass().getAnnotation(Timeout.class);
+      timeoutDuration = annotation.value();
+      timeoutUnit = annotation.timeUnit();
     }
 
     if (!context.awaitCompletion(timeoutDuration, timeoutUnit)) {

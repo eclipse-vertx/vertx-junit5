@@ -16,7 +16,6 @@
 
 package io.vertx.ext.junit5;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.junit.jupiter.api.Test;
@@ -76,7 +75,7 @@ class VertxTestContextTest {
     VertxTestContext context = new VertxTestContext();
 
     VertxTestContext finalContext = context;
-    Handler<AsyncResult<Object>> nextHandler = ar -> {
+    Handler<Object> nextHandler = obj -> {
       checker.set(true);
       finalContext.completeNow();
     };
@@ -87,8 +86,8 @@ class VertxTestContextTest {
     assertThat(checker).isTrue();
 
     checker.set(false);
-
     context = new VertxTestContext();
+
     context.succeeding(nextHandler).handle(Future.failedFuture(new RuntimeException("Plop")));
     assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isFalse();
     assertThat(context.failed()).isTrue();
@@ -103,9 +102,10 @@ class VertxTestContextTest {
     AtomicBoolean checker = new AtomicBoolean(false);
     VertxTestContext context = new VertxTestContext();
 
+    VertxTestContext finalContext = context;
     Handler<Throwable> nextHandler = ar -> {
       checker.set(true);
-      context.completeNow();
+      finalContext.completeNow();
     };
 
     context.failing(nextHandler).handle(Future.failedFuture("Bam"));
@@ -114,6 +114,7 @@ class VertxTestContextTest {
     assertThat(checker).isTrue();
 
     checker.set(false);
+    context = new VertxTestContext();
 
     context.failing(nextHandler).handle(Future.succeededFuture());
     assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isFalse();
@@ -167,5 +168,17 @@ class VertxTestContextTest {
     new Thread(a::flag).start();
     new Thread(a::flag).start();
     assertThat(context.awaitCompletion(500, TimeUnit.MILLISECONDS)).isFalse();
+  }
+
+  @Test
+  void complete_then_fail() {
+    VertxTestContext context = new VertxTestContext();
+
+    context.completeNow();
+    context.failNow(new IllegalStateException("Oh"));
+
+    assertThat(context.completed()).isTrue();
+    assertThat(context.failed()).isFalse();
+    assertThat(context.causeOfFailure()).isNull();
   }
 }

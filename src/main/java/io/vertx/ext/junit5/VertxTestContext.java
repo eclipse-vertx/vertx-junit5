@@ -29,13 +29,13 @@ import java.util.concurrent.TimeUnit;
  */
 public final class VertxTestContext {
 
-  private Throwable throwableReference = null;
+  private volatile Throwable throwableReference = null;
   private final CountDownLatch releaseLatch = new CountDownLatch(1);
   private final HashSet<Checkpoint> checkpoints = new HashSet<>();
 
   // ........................................................................................... //
 
-  public synchronized boolean failed() {
+  public boolean failed() {
     return throwableReference != null;
   }
 
@@ -55,8 +55,10 @@ public final class VertxTestContext {
 
   public synchronized void failNow(Throwable t) {
     Objects.requireNonNull(t, "The exception cannot be null");
-    throwableReference = t;
-    releaseLatch.countDown();
+    if (!completed()) {
+      throwableReference = t;
+      releaseLatch.countDown();
+    }
   }
 
   // ........................................................................................... //

@@ -38,7 +38,7 @@ class CountingCheckpointTest {
       success.set(true);
       witness.set(c);
     };
-    CountingCheckpoint checkpoint = new CountingCheckpoint(consumer, 3);
+    CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(consumer, 3);
 
     checkpoint.flag();
     assertThat(success).isFalse();
@@ -57,17 +57,40 @@ class CountingCheckpointTest {
   };
 
   @Test
-  void refuse_null_satisfaction_trigger() {
-    assertThrows(NullPointerException.class, () -> new CountingCheckpoint(null, 1));
+  void refuse_null_triggers() {
+    assertThrows(NullPointerException.class, () -> CountingCheckpoint.laxCountingCheckpoint(null, 1));
+    assertThrows(NullPointerException.class, () -> CountingCheckpoint.strictCountingCheckpoint(v -> {
+    }, null, 1));
   }
 
   @Test
   void refuse_zero_passes() {
-    assertThrows(IllegalArgumentException.class, () -> new CountingCheckpoint(NOOP, 0));
+    assertThrows(IllegalArgumentException.class, () -> CountingCheckpoint.laxCountingCheckpoint(NOOP, 0));
   }
 
   @Test
   void refuse_negative_passes() {
-    assertThrows(IllegalArgumentException.class, () -> new CountingCheckpoint(NOOP, -1));
+    assertThrows(IllegalArgumentException.class, () -> CountingCheckpoint.laxCountingCheckpoint(NOOP, -1));
+  }
+
+  @Test
+  void check_lax_checkpoint() {
+    CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(NOOP, 1);
+    checkpoint.flag();
+    checkpoint.flag();
+  }
+
+  @Test
+  void check_strict_checkpoint() {
+    AtomicReference<Throwable> box = new AtomicReference<>();
+    CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(NOOP, box::set, 1);
+
+    checkpoint.flag();
+    assertThat(box).hasValue(null);
+    checkpoint.flag();
+    assertThat(box.get())
+      .isNotNull()
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Strict checkpoint flagged too many times");
   }
 }

@@ -89,7 +89,7 @@ class VertxTestContextTest {
     context = new VertxTestContext();
 
     context.succeeding(nextHandler).handle(Future.failedFuture(new RuntimeException("Plop")));
-    assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isFalse();
+    assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isTrue();
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure())
       .isInstanceOf(RuntimeException.class)
@@ -117,7 +117,7 @@ class VertxTestContextTest {
     context = new VertxTestContext();
 
     context.failing(nextHandler).handle(Future.succeededFuture());
-    assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isFalse();
+    assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isTrue();
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure()).hasMessage("The asynchronous result was expected to failNow");
   }
@@ -138,7 +138,7 @@ class VertxTestContextTest {
     context.verify(() -> {
       throw new RuntimeException("Bam");
     });
-    assertThat(context.awaitCompletion(500, TimeUnit.MILLISECONDS)).isFalse();
+    assertThat(context.awaitCompletion(500, TimeUnit.MILLISECONDS)).isTrue();
 
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure())
@@ -168,6 +168,22 @@ class VertxTestContextTest {
     new Thread(a::flag).start();
     new Thread(a::flag).start();
     assertThat(context.awaitCompletion(500, TimeUnit.MILLISECONDS)).isFalse();
+  }
+
+  @Test
+  void check_strict_checkpoint_overuse() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+
+    Checkpoint a = context.strictCheckpoint();
+    Checkpoint b = context.checkpoint();
+    new Thread(a::flag).start();
+    new Thread(a::flag).start();
+
+    assertThat(context.awaitCompletion(500, TimeUnit.MILLISECONDS)).isTrue();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure())
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining("flagged too many times");
   }
 
   @Test

@@ -75,7 +75,17 @@ public final class VertxTestContext {
   }
 
   public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
-    CountingCheckpoint checkpoint = new CountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
+    CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
+    checkpoints.add(checkpoint);
+    return checkpoint;
+  }
+
+  public Checkpoint strictCheckpoint() {
+    return strictCheckpoint(1);
+  }
+
+  public synchronized Checkpoint strictCheckpoint(int requiredNumberOfPasses) {
+    CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointSatisfied, this::failNow, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     return checkpoint;
   }
@@ -145,7 +155,7 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   public boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException {
-    return !failed() && releaseLatch.await(timeout, unit);
+    return failed() || releaseLatch.await(timeout, unit);
   }
 
   // ........................................................................................... //

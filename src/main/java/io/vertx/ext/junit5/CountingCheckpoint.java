@@ -25,17 +25,32 @@ import java.util.function.Consumer;
 final class CountingCheckpoint implements Checkpoint {
 
   private final Consumer<Checkpoint> satisfactionTrigger;
+  private final Consumer<Throwable> overuseTrigger;
   private final int requiredNumberOfPasses;
 
   private int numberOfPasses = 0;
 
-  public CountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, int requiredNumberOfPasses) {
+  static CountingCheckpoint laxCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, int requiredNumberOfPasses) {
+    return new CountingCheckpoint(satisfactionTrigger, null, requiredNumberOfPasses);
+  }
+
+  static CountingCheckpoint strictCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, Consumer<Throwable> overuseTrigger, int requiredNumberOfPasses) {
+    Objects.requireNonNull(overuseTrigger);
+    return new CountingCheckpoint(satisfactionTrigger, overuseTrigger, requiredNumberOfPasses);
+  }
+
+  private CountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, Consumer<Throwable> overuseTrigger, int requiredNumberOfPasses) {
     Objects.requireNonNull(satisfactionTrigger);
     if (requiredNumberOfPasses <= 0) {
       throw new IllegalArgumentException("A checkpoint needs at least 1 pass");
     }
     this.satisfactionTrigger = satisfactionTrigger;
+    this.overuseTrigger = overuseTrigger;
     this.requiredNumberOfPasses = requiredNumberOfPasses;
+  }
+
+  private boolean isStrict() {
+    return overuseTrigger != null;
   }
 
   @Override
@@ -43,6 +58,8 @@ final class CountingCheckpoint implements Checkpoint {
     numberOfPasses = numberOfPasses + 1;
     if (numberOfPasses == requiredNumberOfPasses) {
       satisfactionTrigger.accept(this);
+    } else if (isStrict() && numberOfPasses > requiredNumberOfPasses) {
+      overuseTrigger.accept(new IllegalStateException("Strict checkpoint flagged too many times"));
     }
   }
 }

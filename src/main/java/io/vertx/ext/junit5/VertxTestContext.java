@@ -94,6 +94,7 @@ public final class VertxTestContext {
   }
 
   public <T> Handler<AsyncResult<T>> succeeding(Handler<T> nextHandler) {
+    Objects.requireNonNull(nextHandler, "The handler cannot be null");
     Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
@@ -117,6 +118,7 @@ public final class VertxTestContext {
   }
 
   public <T> Handler<AsyncResult<T>> failing(Handler<Throwable> nextHandler) {
+    Objects.requireNonNull(nextHandler, "The handler cannot be null");
     Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
@@ -131,6 +133,7 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   public VertxTestContext verify(Runnable block) {
+    Objects.requireNonNull(block, "The block cannot be null");
     try {
       block.run();
     } catch (Throwable t) {

@@ -15,6 +15,8 @@
  */
 
 /**
+ * This module offers support for writing Vert.x tests with JUnit 5.
+ *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
 package io.vertx.ext.junit5;

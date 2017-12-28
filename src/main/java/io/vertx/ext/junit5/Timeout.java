@@ -23,11 +23,19 @@ import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Specify how long {@link VertxTestContext#awaitCompletion(long, TimeUnit)} waits before timing out.
+ * <p>
+ * This annotation works on both test methods and test classes.
+ *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ * @see VertxTestContext
+ * @see org.junit.jupiter.api.Test
+ * @see org.junit.jupiter.api.extension.ExtendWith
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface Timeout {
   int value();
+
   TimeUnit timeUnit() default TimeUnit.MILLISECONDS;
 }

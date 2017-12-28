@@ -17,9 +17,15 @@
 package io.vertx.ext.junit5;
 
 /**
+ * A test completion checkpoint, flagging it advances towards the test context completion.
+ *
+ * @see VertxTestContext
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
 public interface Checkpoint {
 
+  /**
+   * Flags the checkpoint.
+   */
   void flag();
 }

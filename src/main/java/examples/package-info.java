@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ */
 @Source
 package examples;
 

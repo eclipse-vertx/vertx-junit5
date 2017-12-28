@@ -25,6 +25,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
+ * JUnit 5 Vert.x extension that allows the injection of {@link Vertx} and {@link VertxTestContext} parameters as well as
+ * an automatic lifecycle on the {@link VertxTestContext} instance.
+ *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
 public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback {

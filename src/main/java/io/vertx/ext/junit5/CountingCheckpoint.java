@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
+ * Checkpoints that count the number of flag invocations.
+ *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
 final class CountingCheckpoint implements Checkpoint {

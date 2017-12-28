@@ -37,6 +37,7 @@
     <junit-jupiter.version>5.0.1</junit-jupiter.version>
     <maven-surefire-plugin.version>2.19</maven-surefire-plugin.version>
     <junit-platform-surefire-provider.version>1.0.1</junit-platform-surefire-provider.version>
+    <assertj-core.version>3.8.0</assertj-core.version>
   </properties>
 
   <dependencyManagement>
@@ -57,10 +58,6 @@
       <artifactId>vertx-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-web-client</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>${junit-jupiter.version}</version>
@@ -76,10 +73,15 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web-client</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.8.0</version>
-      <scope>test</scope>
+      <version>${assertj-core.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

@@ -35,6 +35,8 @@
   <properties>
     <stack.version>${project.version}</stack.version>
     <junit-jupiter.version>5.0.1</junit-jupiter.version>
+    <maven-surefire-plugin.version>2.19</maven-surefire-plugin.version>
+    <junit-platform-surefire-provider.version>1.0.1</junit-platform-surefire-provider.version>
   </properties>
 
   <dependencyManagement>
@@ -69,6 +71,11 @@
       <version>${junit-jupiter.version}</version>
     </dependency>
     <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-docgen</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>3.8.0</version>
@@ -80,12 +87,12 @@
     <plugins>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.19</version>
+        <version>${maven-surefire-plugin.version}</version>
         <dependencies>
           <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-surefire-provider</artifactId>
-            <version>1.0.1</version>
+            <version>${junit-platform-surefire-provider.version}</version>
           </dependency>
           <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -95,8 +102,34 @@
         </dependencies>
       </plugin>
       <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <annotationProcessors>
+                <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
+              </annotationProcessors>
+              <compilerArgs>
+                <arg>-Adocgen.output=${asciidoc.dir}/output</arg>
+                <arg>-Adocgen.source=${asciidoc.dir}/index.adoc</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.asciidoctor</groupId>
         <artifactId>asciidoctor-maven-plugin</artifactId>
+        <configuration>
+          <sourceDirectory>${asciidoc.dir}/output</sourceDirectory>
+          <outputDirectory>${project.build.directory}/docs/${project.artifactId}</outputDirectory>
+          <sourceHighlighter>coderay</sourceHighlighter>
+          <preserveDirectories>true</preserveDirectories>
+          <relativeBaseDir>true</relativeBaseDir>
+          <backend>html</backend>
+          <doctype>book</doctype>
+        </configuration>
         <executions>
           <execution>
             <goals>

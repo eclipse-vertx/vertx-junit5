@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class VertxTestContext {
 
-  private volatile Throwable throwableReference = null;
+  private Throwable throwableReference = null;
   private final CountDownLatch releaseLatch = new CountDownLatch(1);
   private final HashSet<Checkpoint> checkpoints = new HashSet<>();
 
@@ -42,7 +42,7 @@ public final class VertxTestContext {
    *
    * @return {@code true} if the context has failed, {@code false} otherwise.
    */
-  public boolean failed() {
+  public synchronized boolean failed() {
     return throwableReference != null;
   }
 
@@ -51,7 +51,7 @@ public final class VertxTestContext {
    *
    * @return the cause of failure, or {@code null} if the test context hasn't failed.
    */
-  public Throwable causeOfFailure() {
+  public synchronized Throwable causeOfFailure() {
     return throwableReference;
   }
 

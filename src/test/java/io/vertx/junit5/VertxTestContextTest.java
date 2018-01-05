@@ -66,7 +66,7 @@ class VertxTestContextTest {
     context.failing().handle(Future.succeededFuture());
     context.awaitCompletion(1, TimeUnit.MILLISECONDS);
     assertThat(context.failed()).isTrue();
-    assertThat(context.causeOfFailure()).hasMessage("The asynchronous result was expected to failNow");
+    assertThat(context.causeOfFailure()).hasMessage("The asynchronous result was expected to have failed");
   }
 
   @Test
@@ -119,7 +119,7 @@ class VertxTestContextTest {
     context.failing(nextHandler).handle(Future.succeededFuture());
     assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isTrue();
     assertThat(context.failed()).isTrue();
-    assertThat(context.causeOfFailure()).hasMessage("The asynchronous result was expected to failNow");
+    assertThat(context.causeOfFailure()).hasMessage("The asynchronous result was expected to have failed");
   }
 
   @Test

@@ -186,7 +186,7 @@ public final class VertxTestContext {
     Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
-        failNow(new AssertionError("The asynchronous result was expected to failNow"));
+        failNow(new AssertionError("The asynchronous result was expected to have failed"));
       } else {
         checkpoint.flag();
       }
@@ -205,7 +205,7 @@ public final class VertxTestContext {
     Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
-        failNow(new AssertionError("The asynchronous result was expected to failNow"));
+        failNow(new AssertionError("The asynchronous result was expected to have failed"));
       } else {
         checkpoint.flag();
         nextHandler.handle(ar.cause());

@@ -69,7 +69,7 @@ public final class VertxTestContext {
   /**
    * Complete the test context immediately, making the corresponding test pass.
    */
-  public void completeNow() {
+  public synchronized void completeNow() {
     releaseLatch.countDown();
   }
 

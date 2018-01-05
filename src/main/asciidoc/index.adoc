@@ -28,7 +28,7 @@ Also:
 
 == A test context for asynchronous executions
 
-The first contribution of this module is a {@link io.vertx.ext.junit5.VertxTestContext} object that:
+The first contribution of this module is a {@link io.vertx.junit5.VertxTestContext} object that:
 
 1. allows waiting for operations in other threads to notify of completion, and
 2. supports assertion failures to be received to mark a test as failed.
@@ -39,36 +39,36 @@ Here is a very basic usage:
 ----
 {@link examples.Examples.BTest}
 ----
-<1> {@link io.vertx.ext.junit5.VertxTestContext#succeeding} returns an asynchronous result handler that is expected to succeed, and {@link io.vertx.ext.junit5.VertxTestContext#completeNow} makes the test pass.
-<2> {@link io.vertx.ext.junit5.VertxTestContext#awaitCompletion} has the semantics of a `java.util.concurrent.CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
+<1> {@link io.vertx.junit5.VertxTestContext#succeeding} returns an asynchronous result handler that is expected to succeed, and {@link io.vertx.junit5.VertxTestContext#completeNow} makes the test pass.
+<2> {@link io.vertx.junit5.VertxTestContext#awaitCompletion} has the semantics of a `java.util.concurrent.CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
 
 == Use any assertion library
 
 This module does not make any assumption on the assertion library that you should be using.
 You can use plain JUnit assertions, http://joel-costigliola.github.io/assertj/[AssertJ], etc.
 
-To make assertions in asynchronous code and make sure that {@link io.vertx.ext.junit5.VertxTestContext} is notified of potential failures, you need to wrap them with a call to {@link io.vertx.ext.junit5.VertxTestContext#verify}:
+To make assertions in asynchronous code and make sure that {@link io.vertx.junit5.VertxTestContext} is notified of potential failures, you need to wrap them with a call to {@link io.vertx.junit5.VertxTestContext#verify}:
 
 [source,java]
 ----
 {@link examples.Examples#usingVerify}
 ----
 
-The useful methods in {@link io.vertx.ext.junit5.VertxTestContext} are the following:
+The useful methods in {@link io.vertx.junit5.VertxTestContext} are the following:
 
-* {@link io.vertx.ext.junit5.VertxTestContext#completeNow} and {@link io.vertx.ext.junit5.VertxTestContext#failNow} to notify of a success or failure
-* {@link io.vertx.ext.junit5.VertxTestContext#succeeding} to provide `Handler<AsyncResult<T>>` handlers that expect a success, and optionally pass the result to another callback
-* {@link io.vertx.ext.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
-* {@link io.vertx.ext.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the `java.lang.Runnable` is considered as a test failure.
+* {@link io.vertx.junit5.VertxTestContext#completeNow} and {@link io.vertx.junit5.VertxTestContext#failNow} to notify of a success or failure
+* {@link io.vertx.junit5.VertxTestContext#succeeding} to provide `Handler<AsyncResult<T>>` handlers that expect a success, and optionally pass the result to another callback
+* {@link io.vertx.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
+* {@link io.vertx.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the `java.lang.Runnable` is considered as a test failure.
 
 == Checkpoint when there are multiple success conditions
 
-Many tests can be marked as passed by simply calling {@link io.vertx.ext.junit5.VertxTestContext#completeNow} at some point of the execution.
+Many tests can be marked as passed by simply calling {@link io.vertx.junit5.VertxTestContext#completeNow} at some point of the execution.
 That being said there are also many cases where the success of a test depends on different asynchronous parts to be validated.
 
 You can use checkpoints to flag some execution points to be passed.
-A {@link io.vertx.ext.junit5.Checkpoint} can require a single flagging, or multiple flags.
-When all checkpoints have been flagged, then the corresponding {@link io.vertx.ext.junit5.VertxTestContext} makes the test pass.
+A {@link io.vertx.junit5.Checkpoint} can require a single flagging, or multiple flags.
+When all checkpoints have been flagged, then the corresponding {@link io.vertx.junit5.VertxTestContext} makes the test pass.
 
 Here is an example with checkpoints on the HTTP server being started, 10 HTTP requests having being responded, and 10 HTTP client requests having been made:
 
@@ -81,14 +81,14 @@ Here is an example with checkpoints on the HTTP server being started, 10 HTTP re
 
 JUnit 5 provides a different model compared to the previous versions.
 
-The Vert.x integration is primarily done using the {@link io.vertx.ext.junit5.VertxExtension} class, and using test parameter injection of `Vertx` and `VertxTestContext` instances:
+The Vert.x integration is primarily done using the {@link io.vertx.junit5.VertxExtension} class, and using test parameter injection of `Vertx` and `VertxTestContext` instances:
 
 [source,java]
 ----
 {@link examples.Examples.CTest}
 ----
 
-The test is automatically wrapped around the {@link io.vertx.ext.junit5.VertxTestContext} instance lifecycle, so you don't need to insert {@link io.vertx.ext.junit5.VertxTestContext#awaitCompletion} calls yourself:
+The test is automatically wrapped around the {@link io.vertx.junit5.VertxTestContext} instance lifecycle, so you don't need to insert {@link io.vertx.junit5.VertxTestContext#awaitCompletion} calls yourself:
 
 [source,java]
 ----
@@ -97,7 +97,7 @@ The test is automatically wrapped around the {@link io.vertx.ext.junit5.VertxTes
 
 NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
 
-It is also possible to customize the default {@link io.vertx.ext.junit5.VertxTestContext} timeout using the {@link io.vertx.ext.junit5.Timeout} annotation either on test classes or methods:
+It is also possible to customize the default {@link io.vertx.junit5.VertxTestContext} timeout using the {@link io.vertx.junit5.Timeout} annotation either on test classes or methods:
 
 [source,java]
 ----

@@ -18,10 +18,10 @@ package examples;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
-import io.vertx.ext.junit5.Checkpoint;
-import io.vertx.ext.junit5.Timeout;
-import io.vertx.ext.junit5.VertxExtension;
-import io.vertx.ext.junit5.VertxTestContext;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
 import org.junit.jupiter.api.RepeatedTest;

@@ -4,7 +4,7 @@ This module offers integration and support for writing Vert.x tests with JUnit 5
 
 ## Documentation
 
-See [src/main/asciidoc/index.adoc](src/main/asciidoc/output/index.adoc).
+See [src/main/asciidoc/output/index.adoc](src/main/asciidoc/output/index.adoc).
 
 ## License
 

@@ -56,11 +56,17 @@ final class CountingCheckpoint implements Checkpoint {
   }
 
   @Override
-  public synchronized void flag() {
-    numberOfPasses = numberOfPasses + 1;
-    if (numberOfPasses == requiredNumberOfPasses) {
+  public void flag() {
+    boolean callSatisfactionTrigger;
+    boolean callOveruseTrigger;
+    synchronized (this) {
+      numberOfPasses = numberOfPasses + 1;
+      callSatisfactionTrigger = numberOfPasses == requiredNumberOfPasses;
+      callOveruseTrigger = isStrict() && numberOfPasses > requiredNumberOfPasses;
+    }
+    if (callSatisfactionTrigger) {
       satisfactionTrigger.accept(this);
-    } else if (isStrict() && numberOfPasses > requiredNumberOfPasses) {
+    } else if (callOveruseTrigger) {
       overuseTrigger.accept(new IllegalStateException("Strict checkpoint flagged too many times"));
     }
   }

@@ -37,7 +37,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
 
   @Override
   public void beforeTestExecution(ExtensionContext extensionContext) throws Exception {
-    store(extensionContext).put("VertxTestContext.injected", false);
+    awaitCheckpoints(extensionContext);
   }
 
   @Override
@@ -46,12 +46,32 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     return type == VertxTestContext.class || type == Vertx.class;
   }
 
+  private void awaitCheckpoints(ExtensionContext extensionContext) throws Exception {
+    VertxTestContext context = store(extensionContext).remove("VertxTestContext", VertxTestContext.class);
+    if (context != null) {
+      int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
+      TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
+      if (extensionContext.getRequiredTestMethod().isAnnotationPresent(Timeout.class)) {
+        Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
+        timeoutDuration = annotation.value();
+        timeoutUnit = annotation.timeUnit();
+      } else if (extensionContext.getRequiredTestClass().isAnnotationPresent(Timeout.class)) {
+        Timeout annotation = extensionContext.getRequiredTestClass().getAnnotation(Timeout.class);
+        timeoutDuration = annotation.value();
+        timeoutUnit = annotation.timeUnit();
+      }
+
+      if (!context.awaitCompletion(timeoutDuration, timeoutUnit)) {
+        throw new TimeoutException("The test execution timed out");
+      }
+    }
+  }
+
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);
     if (type == VertxTestContext.class) {
       VertxTestContext testContext = new VertxTestContext();
-      store(extensionContext).put("VertxTestContext.injected", true);
       store(extensionContext).put("VertxTestContext", testContext);
       return testContext;
     }
@@ -63,28 +83,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
 
   @Override
   public void afterTestExecution(ExtensionContext extensionContext) throws Exception {
-    if (!store(extensionContext).get("VertxTestContext.injected", Boolean.class)) {
-      return;
-    }
-
-    VertxTestContext context = store(extensionContext).get("VertxTestContext", VertxTestContext.class);
-    store(extensionContext).remove("VertxTestContext");
-
-    int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
-    TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
-    if (extensionContext.getRequiredTestMethod().isAnnotationPresent(Timeout.class)) {
-      Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
-      timeoutDuration = annotation.value();
-      timeoutUnit = annotation.timeUnit();
-    } else if (extensionContext.getRequiredTestClass().isAnnotationPresent(Timeout.class)) {
-      Timeout annotation = extensionContext.getRequiredTestClass().getAnnotation(Timeout.class);
-      timeoutDuration = annotation.value();
-      timeoutUnit = annotation.timeUnit();
-    }
-
-    if (!context.awaitCompletion(timeoutDuration, timeoutUnit)) {
-      throw new TimeoutException("The test execution timed out");
-    }
+    awaitCheckpoints(extensionContext);
   }
 
   private Store store(ExtensionContext extensionContext) {

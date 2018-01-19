@@ -17,6 +17,8 @@
 package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
@@ -69,6 +72,28 @@ class VertxExtensionTest {
     void b(VertxTestContext context) throws InterruptedException {
       Thread.sleep(50);
       context.completeNow();
+    }
+  }
+
+  @Nested
+  @ExtendWith(VertxExtension.class)
+  class AsyncBefore {
+
+    volatile boolean started;
+
+    @BeforeEach
+    void before(VertxTestContext context, Vertx vertx) {
+      started = false;
+      Checkpoint checkpoint = context.checkpoint();
+      vertx.setTimer(200, id -> {
+        started = true;
+        checkpoint.flag();
+      });
+    }
+
+    @Test
+    void check_sync_before_completed() {
+      assertTrue(started);
     }
   }
 }

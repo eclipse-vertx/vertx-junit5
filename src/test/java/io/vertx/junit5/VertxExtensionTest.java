@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,28 +73,6 @@ class VertxExtensionTest {
     void b(VertxTestContext context) throws InterruptedException {
       Thread.sleep(50);
       context.completeNow();
-    }
-  }
-
-  @Nested
-  @ExtendWith(VertxExtension.class)
-  class AsyncBefore {
-
-    volatile boolean started;
-
-    @BeforeEach
-    void before(VertxTestContext context, Vertx vertx) {
-      started = false;
-      Checkpoint checkpoint = context.checkpoint();
-      vertx.setTimer(200, id -> {
-        started = true;
-        checkpoint.flag();
-      });
-    }
-
-    @Test
-    void check_sync_before_completed() {
-      assertTrue(started);
     }
   }
 }

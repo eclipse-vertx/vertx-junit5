@@ -21,6 +21,8 @@ import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 
+import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -30,10 +32,15 @@ import java.util.concurrent.TimeoutException;
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback {
+public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeEachCallback {
 
   private static final int DEFAULT_TIMEOUT_DURATION = 30;
   private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
+
+  @Override
+  public void beforeEach(ExtensionContext extensionContext) throws Exception {
+    awaitCheckpoints(extensionContext);
+  }
 
   @Override
   public void beforeTestExecution(ExtensionContext extensionContext) throws Exception {
@@ -51,7 +58,8 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     if (context != null) {
       int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
       TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
-      if (extensionContext.getRequiredTestMethod().isAnnotationPresent(Timeout.class)) {
+      Optional<Method> testMethod = extensionContext.getTestMethod();
+      if (testMethod.isPresent() && testMethod.get().isAnnotationPresent(Timeout.class)) {
         Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
         timeoutDuration = annotation.value();
         timeoutUnit = annotation.timeUnit();
@@ -60,10 +68,13 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         timeoutDuration = annotation.value();
         timeoutUnit = annotation.timeUnit();
       }
-
       if (!context.awaitCompletion(timeoutDuration, timeoutUnit)) {
         throw new TimeoutException("The test execution timed out");
       }
+    }
+    Optional<ExtensionContext> parent = extensionContext.getParent();
+    if (parent.isPresent()) {
+      awaitCheckpoints(parent.get());
     }
   }
 

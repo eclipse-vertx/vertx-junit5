@@ -24,6 +24,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -129,7 +130,6 @@ public class Examples {
     @ExtendWith(VertxExtension.class)
     class SomeTest {
 
-      @RepeatedTest(3)
       void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
         vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
           WebClient client = WebClient.create(vertx);
@@ -145,6 +145,31 @@ public class Examples {
   }
 
   class ETest {
+
+    @ExtendWith(VertxExtension.class)
+    class SomeTest {
+
+      // Deploy the verticle and execute the test methods when the verticle is successfully deployed
+      @BeforeAll
+      void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
+        vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding());
+      }
+
+      // Repeat this test 3 times
+      @RepeatedTest(3)
+      void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
+        WebClient client = WebClient.create(vertx);
+        client.get(8080, "localhost", "/")
+          .as(BodyCodec.string())
+          .send(testContext.succeeding(response -> testContext.verify(() -> {
+            assertThat(response.body()).isEqualTo("Plop");
+            testContext.completeNow();
+          })));
+      }
+    }
+  }
+
+  class FTest {
 
     @ExtendWith(VertxExtension.class)
     class SomeTest {

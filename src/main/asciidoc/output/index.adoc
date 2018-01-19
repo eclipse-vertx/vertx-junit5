@@ -171,7 +171,6 @@ class DTest {
   @ExtendWith(VertxExtension.class)
   class SomeTest {
 
-    @RepeatedTest(3)
     void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
       vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
         WebClient client = WebClient.create(vertx);
@@ -187,11 +186,41 @@ class DTest {
 }
 ----
 
-It is also possible to customize the default `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` timeout using the `link:../../apidocs/io/vertx/junit5/Timeout.html[@Timeout]` annotation either on test classes or methods:
+You can use it with standard JUnit annotations such as `@RepeatedTest` or lifecycle callbacks annotations:
 
 [source,java]
 ----
 class ETest {
+
+  @ExtendWith(VertxExtension.class)
+  class SomeTest {
+
+    // Deploy the verticle and execute the test methods when the verticle is successfully deployed
+    @BeforeAll
+    void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
+      vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding());
+    }
+
+    // Repeat this test 3 times
+    @RepeatedTest(3)
+    void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
+      WebClient client = WebClient.create(vertx);
+      client.get(8080, "localhost", "/")
+        .as(BodyCodec.string())
+        .send(testContext.succeeding(response -> testContext.verify(() -> {
+          assertThat(response.body()).isEqualTo("Plop");
+          testContext.completeNow();
+        })));
+    }
+  }
+}
+----
+
+It is also possible to customize the default `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` timeout using the `link:../../apidocs/io/vertx/junit5/Timeout.html[@Timeout]` annotation either on test classes or methods:
+
+[source,java]
+----
+class FTest {
 
   @ExtendWith(VertxExtension.class)
   class SomeTest {

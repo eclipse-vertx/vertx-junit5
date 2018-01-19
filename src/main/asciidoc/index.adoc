@@ -99,9 +99,16 @@ The test is automatically wrapped around the {@link io.vertx.junit5.VertxTestCon
 {@link examples.Examples.DTest}
 ----
 
-It is also possible to customize the default {@link io.vertx.junit5.VertxTestContext} timeout using the {@link io.vertx.junit5.Timeout} annotation either on test classes or methods:
+You can use it with standard JUnit annotations such as `@RepeatedTest` or lifecycle callbacks annotations:
 
 [source,java]
 ----
 {@link examples.Examples.ETest}
+----
+
+It is also possible to customize the default {@link io.vertx.junit5.VertxTestContext} timeout using the {@link io.vertx.junit5.Timeout} annotation either on test classes or methods:
+
+[source,java]
+----
+{@link examples.Examples.FTest}
 ----

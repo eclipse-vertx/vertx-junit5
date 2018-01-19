@@ -90,14 +90,14 @@ The Vert.x integration is primarily done using the {@link io.vertx.junit5.VertxE
 {@link examples.Examples.CTest}
 ----
 
+NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
+
 The test is automatically wrapped around the {@link io.vertx.junit5.VertxTestContext} instance lifecycle, so you don't need to insert {@link io.vertx.junit5.VertxTestContext#awaitCompletion} calls yourself:
 
 [source,java]
 ----
 {@link examples.Examples.DTest}
 ----
-
-NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
 
 It is also possible to customize the default {@link io.vertx.junit5.VertxTestContext} timeout using the {@link io.vertx.junit5.Timeout} annotation either on test classes or methods:
 

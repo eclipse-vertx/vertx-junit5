@@ -10,7 +10,7 @@ WARNING: This module has Tech Preview status, this means the API can change betw
 * `artifactId`: `vertx-junit5`
 * `version`: (current Vert.x release or SNAPSHOT)
 
-== Why testing asychronous code is different
+== Why testing asynchronous code is different
 
 Testing asynchronous operations requires more tools than what a test harness like JUnit provides.
 Let us consider a typical Vert.x creation of a HTTP server, and put it into a JUnit test:
@@ -160,6 +160,8 @@ class CTest {
 }
 ----
 
+NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
+
 The test is automatically wrapped around the `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` instance lifecycle, so you don't need to insert `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#awaitCompletion-long-java.util.concurrent.TimeUnit-[awaitCompletion]` calls yourself:
 
 [source,java]
@@ -184,8 +186,6 @@ class DTest {
   }
 }
 ----
-
-NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
 
 It is also possible to customize the default `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[VertxTestContext]` timeout using the `link:../../apidocs/io/vertx/junit5/Timeout.html[@Timeout]` annotation either on test classes or methods:
 

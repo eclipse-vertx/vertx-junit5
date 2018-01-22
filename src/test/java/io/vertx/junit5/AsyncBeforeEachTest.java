@@ -17,8 +17,11 @@ package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,16 +31,16 @@ class AsyncBeforeEachTest {
 
   private volatile boolean started1;
   private volatile boolean started2;
-  private volatile int count;
+  private final AtomicInteger count = new AtomicInteger();
 
   @BeforeEach
   void before1(VertxTestContext context, Vertx vertx) {
     started1 = false;
-    assertTrue((started2 && count == 1) || (!started2 && count == 0));
+    assertTrue((started2 && count.get() == 1) || (!started2 && count.get() == 0));
     Checkpoint checkpoint = context.checkpoint();
     vertx.setTimer(200, id -> {
       started1 = true;
-      count++;
+      count.incrementAndGet();
       checkpoint.flag();
     });
   }
@@ -45,19 +48,19 @@ class AsyncBeforeEachTest {
   @BeforeEach
   void before2(VertxTestContext context, Vertx vertx) {
     started2 = false;
-    assertTrue((started1 && count == 1) || (!started1 && count == 0));
+    assertTrue((started1 && count.get() == 1) || (!started1 && count.get() == 0));
     Checkpoint checkpoint = context.checkpoint();
     vertx.setTimer(200, id -> {
       started2 = true;
-      count++;
+      count.incrementAndGet();
       checkpoint.flag();
     });
   }
 
-  @Test
+  @RepeatedTest(10)
   void check_async_before_completed() {
     assertTrue(started1);
     assertTrue(started2);
-    assertEquals(2, count);
+    assertEquals(2, count.get());
   }
 }

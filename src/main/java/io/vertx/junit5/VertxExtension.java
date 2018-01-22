@@ -82,7 +82,11 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
       timeoutUnit = annotation.timeUnit();
     }
 
-    if (!context.awaitCompletion(timeoutDuration, timeoutUnit)) {
+    if (context.awaitCompletion(timeoutDuration, timeoutUnit)) {
+      if (context.failed()) {
+        throw new AssertionError(context.causeOfFailure());
+      }
+    } else {
       throw new TimeoutException("The test execution timed out");
     }
   }

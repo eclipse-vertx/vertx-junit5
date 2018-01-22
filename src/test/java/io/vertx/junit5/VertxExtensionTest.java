@@ -17,13 +17,24 @@
 package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
@@ -69,6 +80,38 @@ class VertxExtensionTest {
     void b(VertxTestContext context) throws InterruptedException {
       Thread.sleep(50);
       context.completeNow();
+    }
+  }
+
+  @Nested
+  class EmbeddedWithARunner {
+
+    @Test
+    void checkFailureTest() {
+      LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        .selectors(selectClass(FailureTest.class))
+        .build();
+      Launcher launcher = LauncherFactory.create();
+      SummaryGeneratingListener listener = new SummaryGeneratingListener();
+      launcher.registerTestExecutionListeners(listener);
+      launcher.execute(request);
+      TestExecutionSummary summary = listener.getSummary();
+      assertThat(summary.getTestsStartedCount()).isEqualTo(1);
+      assertThat(summary.getTestsFailedCount()).isEqualTo(1);
+      assertThat(summary.getFailures().get(0).getException()).isInstanceOf(AssertionError.class);
+    }
+  }
+
+  @Nested
+  @ExtendWith(VertxExtension.class)
+  class FailureTest {
+
+    @Test
+    @Tag("programmatic")
+    void thisMustFail(Vertx vertx, VertxTestContext testContext) {
+      testContext.verify(() -> {
+        assertTrue(false);
+      });
     }
   }
 }

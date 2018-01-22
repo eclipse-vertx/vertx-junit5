@@ -39,6 +39,7 @@
     <junit-platform-surefire-provider.version>1.0.1</junit-platform-surefire-provider.version>
     <assertj-core.version>3.8.0</assertj-core.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
+    <junit-platform-launcher.version>1.0.1</junit-platform-launcher.version>
   </properties>
 
   <dependencyManagement>
@@ -90,6 +91,12 @@
       <version>${apiguardian-api.version}</version>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>${junit-platform-launcher.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -109,6 +116,11 @@
             <version>${junit-jupiter.version}</version>
           </dependency>
         </dependencies>
+        <configuration>
+          <properties>
+            <excludeTags>programmatic</excludeTags>
+          </properties>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

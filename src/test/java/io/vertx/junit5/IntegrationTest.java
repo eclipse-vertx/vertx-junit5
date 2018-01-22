@@ -21,9 +21,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.TimeUnit;
@@ -88,19 +86,6 @@ class IntegrationTest {
   @Nested
   @ExtendWith(VertxExtension.class)
   class WithExtension {
-
-    @RepeatedTest(3)
-    void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
-      vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
-        WebClient client = WebClient.create(vertx);
-        client.get(8080, "localhost", "/")
-          .as(BodyCodec.string())
-          .send(testContext.succeeding(response -> testContext.verify(() -> {
-            assertThat(response.body()).isEqualTo("Plop");
-            testContext.completeNow();
-          })));
-      }));
-    }
 
     @Test
     @Timeout(10_000)

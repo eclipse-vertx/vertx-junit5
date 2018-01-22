@@ -103,18 +103,45 @@ class VertxExtensionTest {
       assertThat(summary.getTestsFailedCount()).isEqualTo(1);
       assertThat(summary.getFailures().get(0).getException()).isInstanceOf(AssertionError.class);
     }
-  }
 
-  @Nested
-  @ExtendWith(VertxExtension.class)
-  class FailureTest {
+    @Nested
+    @ExtendWith(VertxExtension.class)
+    class FailureTest {
+
+      @Test
+      @Tag("programmatic")
+      void thisMustFail(Vertx vertx, VertxTestContext testContext) {
+        testContext.verify(() -> {
+          assertTrue(false);
+        });
+      }
+    }
 
     @Test
-    @Tag("programmatic")
-    void thisMustFail(Vertx vertx, VertxTestContext testContext) {
-      testContext.verify(() -> {
-        assertTrue(false);
-      });
+    void checkDirectFailure() {
+      LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        .selectors(selectClass(DirectFailureTest.class))
+        .build();
+      Launcher launcher = LauncherFactory.create();
+      SummaryGeneratingListener listener = new SummaryGeneratingListener();
+      launcher.registerTestExecutionListeners(listener);
+      launcher.execute(request);
+      TestExecutionSummary summary = listener.getSummary();
+      assertThat(summary.getTestsStartedCount()).isEqualTo(1);
+      assertThat(summary.getTestsFailedCount()).isEqualTo(1);
+      assertThat(summary.getFailures().get(0).getException()).isInstanceOf(RuntimeException.class);
+    }
+
+    @Nested
+    @ExtendWith(VertxExtension.class)
+    class DirectFailureTest {
+
+      @Test
+      @Tag("programmatic")
+      @Timeout(value = 1, timeUnit = TimeUnit.SECONDS)
+      void thisMustFail(VertxTestContext testContext) {
+        throw new RuntimeException("YOLO");
+      }
     }
   }
 }

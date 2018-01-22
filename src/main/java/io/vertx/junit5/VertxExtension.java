@@ -54,6 +54,9 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   }
 
   private void awaitCheckpoints(ExtensionContext extensionContext) throws Exception {
+    if (extensionContext.getExecutionException().isPresent()) {
+      return;
+    }
     VertxTestContext context = store(extensionContext).remove("VertxTestContext", VertxTestContext.class);
     if (context != null) {
       int timeoutDuration = DEFAULT_TIMEOUT_DURATION;

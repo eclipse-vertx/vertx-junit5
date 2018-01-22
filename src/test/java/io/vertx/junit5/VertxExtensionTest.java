@@ -16,12 +16,9 @@
 
 package io.vertx.junit5;
 
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -32,10 +29,8 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
@@ -141,6 +136,40 @@ class VertxExtensionTest {
       @Timeout(value = 1, timeUnit = TimeUnit.SECONDS)
       void thisMustFail(VertxTestContext testContext) {
         throw new RuntimeException("YOLO");
+      }
+    }
+  }
+
+  static class UselessVerticle extends AbstractVerticle {
+  }
+
+  @Nested
+  @ExtendWith(VertxExtension.class)
+  class VertxInjectionTest {
+
+    @BeforeEach
+    void prepare(Vertx vertx, VertxTestContext testContext) {
+      vertx.deployVerticle(new UselessVerticle(), testContext.succeeding());
+    }
+
+    @AfterEach
+    void cleanup(Vertx vertx, VertxTestContext testContext) {
+      assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
+      vertx.close(testContext.succeeding());
+    }
+
+    @RepeatedTest(10)
+    void checkDeployments(Vertx vertx, VertxTestContext testContext) {
+      assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
+      testContext.completeNow();
+    }
+
+    @Nested
+    class NestedTest {
+      @RepeatedTest(10)
+      void checkDeployments(Vertx vertx, VertxTestContext testContext) {
+        assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
+        testContext.completeNow();
       }
     }
   }

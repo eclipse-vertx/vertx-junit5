@@ -32,15 +32,13 @@ import java.util.concurrent.TimeoutException;
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeEachCallback {
+public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeEachCallback, AfterEachCallback {
 
   private static final int DEFAULT_TIMEOUT_DURATION = 30;
   private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
-  @Override
-  public void beforeEach(ExtensionContext extensionContext) throws Exception {
-    awaitCheckpoints(extensionContext);
-  }
+  private final String TEST_CONTEXT_KEY = "VertxTestContext";
+  private final String VERTX_INSTANCE_KEY = "VertxInstance";
 
   @Override
   public void beforeTestExecution(ExtensionContext extensionContext) throws Exception {
@@ -57,7 +55,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     if (extensionContext.getExecutionException().isPresent()) {
       return;
     }
-    VertxTestContext context = store(extensionContext).remove("VertxTestContext", VertxTestContext.class);
+    VertxTestContext context = store(extensionContext).remove(TEST_CONTEXT_KEY, VertxTestContext.class);
     if (context != null) {
       int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
       TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
@@ -93,13 +91,17 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);
+    Store store = store(extensionContext);
     if (type == VertxTestContext.class) {
       VertxTestContext testContext = new VertxTestContext();
-      store(extensionContext).put("VertxTestContext", testContext);
+      store.put(TEST_CONTEXT_KEY, testContext);
       return testContext;
     }
     if (type == Vertx.class) {
-      return Vertx.vertx();
+      if (store.get(VERTX_INSTANCE_KEY) == null) {
+        store.put(VERTX_INSTANCE_KEY, Vertx.vertx());
+      }
+      return store.get(VERTX_INSTANCE_KEY);
     }
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
@@ -107,6 +109,16 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   @Override
   public void afterTestExecution(ExtensionContext extensionContext) throws Exception {
     awaitCheckpoints(extensionContext);
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext extensionContext) throws Exception {
+    awaitCheckpoints(extensionContext);
+  }
+
+  @Override
+  public void afterEach(ExtensionContext context) throws Exception {
+    awaitCheckpoints(context);
   }
 
   private Store store(ExtensionContext extensionContext) {

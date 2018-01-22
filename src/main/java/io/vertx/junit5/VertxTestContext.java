@@ -249,7 +249,7 @@ public final class VertxTestContext {
    * @throws InterruptedException when the thread has been interrupted.
    */
   public boolean awaitCompletion(long timeout, TimeUnit unit) throws InterruptedException {
-    return releaseLatch.await(timeout, unit);
+    return failed() || releaseLatch.await(timeout, unit);
   }
 
   // ........................................................................................... //

@@ -17,15 +17,25 @@
 package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
+import org.junit.platform.commons.util.AnnotationUtils;
 
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+
+import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
 
 /**
  * JUnit 5 Vert.x extension that allows the injection of {@link Vertx} and {@link VertxTestContext} parameters as well as
@@ -33,17 +43,24 @@ import java.util.concurrent.TimeoutException;
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeEachCallback, AfterEachCallback {
+public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeEachCallback, AfterEachCallback, BeforeAllCallback, AfterAllCallback {
 
   private static final int DEFAULT_TIMEOUT_DURATION = 30;
   private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
   private final String TEST_CONTEXT_KEY = "VertxTestContext";
   private final String VERTX_INSTANCE_KEY = "VertxInstance";
+  private final String VERTX_INSTANCE_CREATOR_KEY = "VertxInstanceCreator";
 
-  @Override
-  public void beforeTestExecution(ExtensionContext extensionContext) throws Exception {
-    awaitCheckpoints(extensionContext);
+  private static class ContextList extends ArrayList<VertxTestContext> {
+    /*
+     * There may be concurrent test contexts to join at a point of time because it is allowed to have several
+     * user-defined lifecycle event handles (e.g., @BeforeEach, etc).
+     */
+  }
+
+  private static enum VertxInstanceCreator {
+    BEFORE_ALL, BEFORE_EACH, TEST
   }
 
   @Override
@@ -52,13 +69,119 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     return type == VertxTestContext.class || type == Vertx.class;
   }
 
-  private void awaitCheckpoints(ExtensionContext extensionContext) throws Exception {
+  private Class<?> parameterType(ParameterContext parameterContext) {
+    return parameterContext.getParameter().getType();
+  }
+
+  @Override
+  public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+    Class<?> type = parameterType(parameterContext);
+    Store store = store(extensionContext);
+    if (type == Vertx.class) {
+      if (store.get(VERTX_INSTANCE_KEY) == null) {
+        Executable injectionTarget = parameterContext.getDeclaringExecutable();
+        if (isAnnotated(injectionTarget, BeforeAll.class)) {
+          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.BEFORE_ALL);
+        } else if (isAnnotated(injectionTarget, BeforeEach.class)) {
+          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.BEFORE_EACH);
+        } else {
+          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.TEST);
+        }
+      }
+      return store.getOrComputeIfAbsent(VERTX_INSTANCE_KEY, key -> Vertx.vertx());
+    }
+    if (type == VertxTestContext.class) {
+      ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
+      VertxTestContext newTestContext = new VertxTestContext();
+      contexts.add(newTestContext);
+      return newTestContext;
+    }
+    throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
+  }
+
+  private Store store(ExtensionContext extensionContext) {
+    return extensionContext.getStore(Namespace.create(VertxExtension.class, extensionContext));
+  }
+
+  @Override
+  public void beforeAll(ExtensionContext context) throws Exception {
+    // Not much we can do here ATM
+  }
+
+  @Override
+  public void afterAll(ExtensionContext context) throws Exception {
+    // We may wait on test contexts from @AfterAll methods
+    joinActiveTestContexts(context);
+
+    // Cleanup the Vertx instance if created by @BeforeEach in the current context
+    checkAndRemoveVertxInstance(context, VertxInstanceCreator.BEFORE_ALL);
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext context) throws Exception {
+    // We may wait on test contexts from @BeforeAll methods
+    joinActiveTestContexts(context);
+  }
+
+  @Override
+  public void afterEach(ExtensionContext context) throws Exception {
+    // We may wait on test contexts from @AfterEach methods
+    joinActiveTestContexts(context);
+
+    // Cleanup the Vertx instance if created by @BeforeEach in the current context
+    checkAndRemoveVertxInstance(context, VertxInstanceCreator.BEFORE_EACH);
+  }
+
+  private void checkAndRemoveVertxInstance(ExtensionContext context, VertxInstanceCreator stage) throws Exception {
+    Store store = store(context);
+    if (store.get(VERTX_INSTANCE_CREATOR_KEY) == stage) {
+      store.remove(VERTX_INSTANCE_CREATOR_KEY);
+      Vertx vertx = store.remove(VERTX_INSTANCE_KEY, Vertx.class);
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<Throwable> errorBox = new AtomicReference<>();
+      vertx.close(ar -> {
+        if (ar.failed()) {
+          errorBox.set(ar.cause());
+        }
+        latch.countDown();
+      });
+      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
+        throw new TimeoutException("Closing the Vertx context timed out");
+      }
+      Throwable throwable = errorBox.get();
+      if (throwable != null) {
+        if (throwable instanceof Exception) {
+          throw (Exception) throwable;
+        } else {
+          throw new VertxException(throwable);
+        }
+      }
+    }
+  }
+
+  @Override
+  public void beforeTestExecution(ExtensionContext context) throws Exception {
+    // We may wait on test contexts from @BeforeEach methods
+    joinActiveTestContexts(context);
+  }
+
+  @Override
+  public void afterTestExecution(ExtensionContext context) throws Exception {
+    // We may wait on the test context from a test
+    joinActiveTestContexts(context);
+
+    // Cleanup the Vertx instance if created by the test in the current context
+    checkAndRemoveVertxInstance(context, VertxInstanceCreator.TEST);
+  }
+
+  private void joinActiveTestContexts(ExtensionContext extensionContext) throws Exception {
     if (extensionContext.getExecutionException().isPresent()) {
       return;
     }
-    ContextList list = store(extensionContext).remove(TEST_CONTEXT_KEY, ContextList.class);
-    if (list != null) {
-      for (VertxTestContext context : list) {
+
+    ContextList currentContexts = store(extensionContext).remove(TEST_CONTEXT_KEY, ContextList.class);
+    if (currentContexts != null) {
+      for (VertxTestContext context : currentContexts) {
         int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
         TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
         Optional<Method> testMethod = extensionContext.getTestMethod();
@@ -85,62 +208,9 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         }
       }
     }
-    Optional<ExtensionContext> parent = extensionContext.getParent();
-    if (parent.isPresent()) {
-      awaitCheckpoints(parent.get());
+
+    if (extensionContext.getParent().isPresent()) {
+      joinActiveTestContexts(extensionContext.getParent().get());
     }
-  }
-
-  // We use a list because if we have two method beforeEach then we get a single beforeEach callback
-  // but we get two VertxTestContext, one for each before method and thus we need to keep track of all of them
-  // note that we can only guarantee that the test method will get called after the before each
-  // but we cannot guarantee that we don't have concurrent execution between two before each
-  private static class ContextList extends ArrayList<VertxTestContext> {
-
-  }
-
-  @Override
-  public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    Class<?> type = parameterType(parameterContext);
-    Store store = store(extensionContext);
-    if (type == VertxTestContext.class) {
-      VertxTestContext testContext = new VertxTestContext();
-      ContextList list = store.get(TEST_CONTEXT_KEY, ContextList.class);
-      if (list == null) {
-        store.put(TEST_CONTEXT_KEY, list = new ContextList());
-      }
-      list.add(testContext);
-      return testContext;
-    }
-    if (type == Vertx.class) {
-      if (store.get(VERTX_INSTANCE_KEY) == null) {
-        store.put(VERTX_INSTANCE_KEY, Vertx.vertx());
-      }
-      return store.get(VERTX_INSTANCE_KEY);
-    }
-    throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
-  }
-
-  @Override
-  public void afterTestExecution(ExtensionContext extensionContext) throws Exception {
-    awaitCheckpoints(extensionContext);
-  }
-
-  @Override
-  public void beforeEach(ExtensionContext extensionContext) throws Exception {
-    awaitCheckpoints(extensionContext);
-  }
-
-  @Override
-  public void afterEach(ExtensionContext context) throws Exception {
-    awaitCheckpoints(context);
-  }
-
-  private Store store(ExtensionContext extensionContext) {
-    return extensionContext.getStore(Namespace.create(getClass(), extensionContext));
-  }
-
-  private Class<?> parameterType(ParameterContext parameterContext) {
-    return parameterContext.getParameter().getType();
   }
 }

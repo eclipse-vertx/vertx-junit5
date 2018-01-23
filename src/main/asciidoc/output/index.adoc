@@ -231,7 +231,7 @@ class SomeTest {
 JUnit 5 provides several user-defined lifecycle methods annotated with `@BeforeAll`, `@BeforeEach`, `@AfterEach` and `@AfterAll`.
 
 These methods can request the injection of `Vertx` instances.
-By doing so, they are likely to perform asynchronous operations with the `Vertx` instance, so they can request the injection of a `VertxTestContext` instance to ensure that the JUnit runners waits for them to complete, and report possile errors.
+By doing so, they are likely to perform asynchronous operations with the `Vertx` instance, so they can request the injection of a `VertxTestContext` instance to ensure that the JUnit runner waits for them to complete, and report possible errors.
 
 Here is an example:
 

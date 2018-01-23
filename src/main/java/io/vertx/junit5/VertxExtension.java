@@ -78,6 +78,12 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     Class<?> type = parameterType(parameterContext);
     Store store = store(extensionContext);
     if (type == Vertx.class) {
+      if (extensionContext.getParent().isPresent()) {
+        Store parentStore = store(extensionContext.getParent().get());
+        if (parentStore.get(VERTX_INSTANCE_KEY) != null) {
+          return parentStore.get(VERTX_INSTANCE_KEY);
+        }
+      }
       if (store.get(VERTX_INSTANCE_KEY) == null) {
         Executable injectionTarget = parameterContext.getDeclaringExecutable();
         if (isAnnotated(injectionTarget, BeforeAll.class)) {

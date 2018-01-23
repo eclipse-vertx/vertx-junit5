@@ -147,19 +147,31 @@ class VertxExtensionTest {
   @ExtendWith(VertxExtension.class)
   class VertxInjectionTest {
 
+    Vertx currentVertx;
+    VertxTestContext previousTestContext;
+
     @BeforeEach
     void prepare(Vertx vertx, VertxTestContext testContext) {
+      assertThat(testContext).isNotSameAs(previousTestContext);
+      previousTestContext = testContext;
+      assertThat(currentVertx).isNotSameAs(vertx);
+      currentVertx = vertx;
       vertx.deployVerticle(new UselessVerticle(), testContext.succeeding());
     }
 
     @AfterEach
     void cleanup(Vertx vertx, VertxTestContext testContext) {
+      assertThat(testContext).isNotSameAs(previousTestContext);
+      previousTestContext = testContext;
       assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
       vertx.close(testContext.succeeding());
     }
 
     @RepeatedTest(10)
     void checkDeployments(Vertx vertx, VertxTestContext testContext) {
+      assertThat(testContext).isNotSameAs(previousTestContext);
+      previousTestContext = testContext;
+      assertThat(vertx).isSameAs(currentVertx);
       assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
       testContext.completeNow();
     }
@@ -168,6 +180,9 @@ class VertxExtensionTest {
     class NestedTest {
       @RepeatedTest(10)
       void checkDeployments(Vertx vertx, VertxTestContext testContext) {
+        assertThat(testContext).isNotSameAs(previousTestContext);
+        previousTestContext = testContext;
+        assertThat(vertx).isSameAs(currentVertx);
         assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
         testContext.completeNow();
       }

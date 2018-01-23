@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -55,31 +56,33 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     if (extensionContext.getExecutionException().isPresent()) {
       return;
     }
-    VertxTestContext context = store(extensionContext).remove(TEST_CONTEXT_KEY, VertxTestContext.class);
-    if (context != null) {
-      int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
-      TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
-      Optional<Method> testMethod = extensionContext.getTestMethod();
-      if (testMethod.isPresent() && testMethod.get().isAnnotationPresent(Timeout.class)) {
-        Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
-        timeoutDuration = annotation.value();
-        timeoutUnit = annotation.timeUnit();
-      } else if (extensionContext.getRequiredTestClass().isAnnotationPresent(Timeout.class)) {
-        Timeout annotation = extensionContext.getRequiredTestClass().getAnnotation(Timeout.class);
-        timeoutDuration = annotation.value();
-        timeoutUnit = annotation.timeUnit();
-      }
-      if (context.awaitCompletion(timeoutDuration, timeoutUnit)) {
-        if (context.failed()) {
-          Throwable throwable = context.causeOfFailure();
-          if (throwable instanceof Exception) {
-            throw (Exception) throwable;
-          } else {
-            throw new AssertionError(throwable);
-          }
+    ContextList list = store(extensionContext).remove(TEST_CONTEXT_KEY, ContextList.class);
+    if (list != null) {
+      for (VertxTestContext context : list) {
+        int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
+        TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
+        Optional<Method> testMethod = extensionContext.getTestMethod();
+        if (testMethod.isPresent() && testMethod.get().isAnnotationPresent(Timeout.class)) {
+          Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
+          timeoutDuration = annotation.value();
+          timeoutUnit = annotation.timeUnit();
+        } else if (extensionContext.getRequiredTestClass().isAnnotationPresent(Timeout.class)) {
+          Timeout annotation = extensionContext.getRequiredTestClass().getAnnotation(Timeout.class);
+          timeoutDuration = annotation.value();
+          timeoutUnit = annotation.timeUnit();
         }
-      } else {
-        throw new TimeoutException("The test execution timed out");
+        if (context.awaitCompletion(timeoutDuration, timeoutUnit)) {
+          if (context.failed()) {
+            Throwable throwable = context.causeOfFailure();
+            if (throwable instanceof Exception) {
+              throw (Exception) throwable;
+            } else {
+              throw new AssertionError(throwable);
+            }
+          }
+        } else {
+          throw new TimeoutException("The test execution timed out");
+        }
       }
     }
     Optional<ExtensionContext> parent = extensionContext.getParent();
@@ -88,13 +91,25 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     }
   }
 
+  // We use a list because if we have two method beforeEach then we get a single beforeEach callback
+  // but we get two VertxTestContext, one for each before method and thus we need to keep track of all of them
+  // note that we can only guarantee that the test method will get called after the before each
+  // but we cannot guarantee that we don't have concurrent execution between two before each
+  private static class ContextList extends ArrayList<VertxTestContext> {
+
+  }
+
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);
     Store store = store(extensionContext);
     if (type == VertxTestContext.class) {
       VertxTestContext testContext = new VertxTestContext();
-      store.put(TEST_CONTEXT_KEY, testContext);
+      ContextList list = store.get(TEST_CONTEXT_KEY, ContextList.class);
+      if (list == null) {
+        store.put(TEST_CONTEXT_KEY, list = new ContextList());
+      }
+      list.add(testContext);
       return testContext;
     }
     if (type == Vertx.class) {

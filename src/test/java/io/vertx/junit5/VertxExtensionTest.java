@@ -16,11 +16,9 @@
 
 package io.vertx.junit5;
 
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -100,18 +98,94 @@ class VertxExtensionTest {
       assertThat(summary.getTestsFailedCount()).isEqualTo(1);
       assertThat(summary.getFailures().get(0).getException()).isInstanceOf(AssertionError.class);
     }
+
+    @Nested
+    @ExtendWith(VertxExtension.class)
+    class FailureTest {
+
+      @Test
+      @Tag("programmatic")
+      void thisMustFail(Vertx vertx, VertxTestContext testContext) {
+        testContext.verify(() -> {
+          assertTrue(false);
+        });
+      }
+    }
+
+    @Test
+    void checkDirectFailure() {
+      LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        .selectors(selectClass(DirectFailureTest.class))
+        .build();
+      Launcher launcher = LauncherFactory.create();
+      SummaryGeneratingListener listener = new SummaryGeneratingListener();
+      launcher.registerTestExecutionListeners(listener);
+      launcher.execute(request);
+      TestExecutionSummary summary = listener.getSummary();
+      assertThat(summary.getTestsStartedCount()).isEqualTo(1);
+      assertThat(summary.getTestsFailedCount()).isEqualTo(1);
+      assertThat(summary.getFailures().get(0).getException()).isInstanceOf(RuntimeException.class);
+    }
+
+    @Nested
+    @ExtendWith(VertxExtension.class)
+    class DirectFailureTest {
+
+      @Test
+      @Tag("programmatic")
+      @Timeout(value = 1, timeUnit = TimeUnit.SECONDS)
+      void thisMustFail(VertxTestContext testContext) {
+        throw new RuntimeException("YOLO");
+      }
+    }
+  }
+
+  static class UselessVerticle extends AbstractVerticle {
   }
 
   @Nested
   @ExtendWith(VertxExtension.class)
-  class FailureTest {
+  class VertxInjectionTest {
 
-    @Test
-    @Tag("programmatic")
-    void thisMustFail(Vertx vertx, VertxTestContext testContext) {
-      testContext.verify(() -> {
-        assertTrue(false);
-      });
+    Vertx currentVertx;
+    VertxTestContext previousTestContext;
+
+    @BeforeEach
+    void prepare(Vertx vertx, VertxTestContext testContext) {
+      assertThat(testContext).isNotSameAs(previousTestContext);
+      previousTestContext = testContext;
+      assertThat(currentVertx).isNotSameAs(vertx);
+      currentVertx = vertx;
+      vertx.deployVerticle(new UselessVerticle(), testContext.succeeding());
+    }
+
+    @AfterEach
+    void cleanup(Vertx vertx, VertxTestContext testContext) {
+      assertThat(testContext).isNotSameAs(previousTestContext);
+      previousTestContext = testContext;
+      assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
+      vertx.close(testContext.succeeding());
+    }
+
+    @RepeatedTest(10)
+    void checkDeployments(Vertx vertx, VertxTestContext testContext) {
+      assertThat(testContext).isNotSameAs(previousTestContext);
+      previousTestContext = testContext;
+      assertThat(vertx).isSameAs(currentVertx);
+      assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
+      testContext.completeNow();
+    }
+
+    @Nested
+    class NestedTest {
+      @RepeatedTest(10)
+      void checkDeployments(Vertx vertx, VertxTestContext testContext) {
+        assertThat(testContext).isNotSameAs(previousTestContext);
+        previousTestContext = testContext;
+        assertThat(vertx).isSameAs(currentVertx);
+        assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
+        testContext.completeNow();
+      }
     }
   }
 }

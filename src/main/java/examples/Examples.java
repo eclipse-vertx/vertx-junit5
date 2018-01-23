@@ -18,13 +18,13 @@ package examples;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.codec.BodyCodec;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.codec.BodyCodec;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class Examples {
 
+  @ExtendWith(VertxExtension.class)
   class ATest {
 
     @Test
@@ -51,6 +52,7 @@ public class Examples {
     }
   }
 
+  @ExtendWith(VertxExtension.class)
   class BTest {
 
     @Test
@@ -150,7 +152,7 @@ public class Examples {
     class SomeTest {
 
       // Deploy the verticle and execute the test methods when the verticle is successfully deployed
-      @BeforeAll
+      @BeforeEach
       void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
         vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding());
       }

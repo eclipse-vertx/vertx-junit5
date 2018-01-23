@@ -22,6 +22,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ */
 @ExtendWith(VertxExtension.class)
 class VertxExtensionCompleteLifecycleInjectionTest {
 

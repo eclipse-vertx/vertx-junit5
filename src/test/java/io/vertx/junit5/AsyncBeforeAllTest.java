@@ -17,6 +17,7 @@ package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
+@DisplayName("Test multiple @BeforeAll methods")
 class AsyncBeforeAllTest {
 
   private static boolean started1;

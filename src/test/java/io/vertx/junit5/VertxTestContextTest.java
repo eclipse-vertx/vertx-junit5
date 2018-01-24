@@ -19,6 +19,7 @@ package io.vertx.junit5;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,9 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
+@DisplayName("Unit tests for VertxTestContext")
 class VertxTestContextTest {
 
   @Test
+  @DisplayName("Check that failing with a null exception is forbidden")
   void fail_with_null() {
     VertxTestContext context = new VertxTestContext();
     assertThatThrownBy(() -> context.failNow(null))
@@ -44,6 +47,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check the behavior of succeeding()")
   void check_async_assert() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
     context.succeeding().handle(Future.succeededFuture());
@@ -60,6 +64,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check the behavior of failing()")
   void check_async_assert_fail() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
     context.failing().handle(Future.failedFuture("Bam"));
@@ -74,6 +79,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check the behavior of succeeding(callback)")
   void check_async_assert_with_handler() throws InterruptedException {
     AtomicBoolean checker = new AtomicBoolean(false);
     VertxTestContext context = new VertxTestContext();
@@ -102,6 +108,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check the behavior of failing(callback)")
   void check_async_assert_fail_with_handler() throws InterruptedException {
     AtomicBoolean checker = new AtomicBoolean(false);
     VertxTestContext context = new VertxTestContext();
@@ -127,6 +134,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check the behavior of verify() and no error")
   void check_verify_ok() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
     context.verify(() -> {
@@ -137,6 +145,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check the behavior of verify() with an error")
   void check_verify_fail() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
     context.verify(() -> {
@@ -151,6 +160,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check that flagging 2 checkpoints completes the test context")
   void check_checkpoint() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
 
@@ -163,6 +173,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check that not flagging all checkpoints ends up in a timeout")
   void checK_not_all_checkpoints_passed_timesout() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
 
@@ -175,6 +186,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check that flagging strict checkpoints more than expected fails the test context")
   void check_strict_checkpoint_overuse() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
 
@@ -191,6 +203,7 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check that failing an already completed context is not possible")
   void complete_then_fail() {
     VertxTestContext context = new VertxTestContext();
 

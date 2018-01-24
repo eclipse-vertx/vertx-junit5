@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
+@DisplayName("Integration tests")
 class IntegrationTest {
 
   static class HttpServerVerticle extends AbstractVerticle {
@@ -50,9 +51,11 @@ class IntegrationTest {
   }
 
   @Nested
+  @DisplayName("Tests without parameter injection and explicit Vertx and VertxTestContext instances")
   class Naked {
 
     @Test
+    @DisplayName("Start a HTTP server")
     void start_http_server() throws InterruptedException {
       VertxTestContext testContext = new VertxTestContext();
 
@@ -65,6 +68,7 @@ class IntegrationTest {
     }
 
     @Test
+    @DisplayName("Start a HTTP server, then issue a HTTP client request and check the response")
     void vertx_check_http_server_response() throws InterruptedException {
       Vertx vertx = Vertx.vertx();
       VertxTestContext testContext = new VertxTestContext();
@@ -85,10 +89,12 @@ class IntegrationTest {
 
   @Nested
   @ExtendWith(VertxExtension.class)
+  @DisplayName("Tests with parameter injection")
   class WithExtension {
 
     @Test
     @Timeout(10_000)
+    @DisplayName("Start a HTTP server, make 10 client requests, and use several checkpoints")
     void start_and_request_http_server_with_checkpoints(Vertx vertx, VertxTestContext testContext) {
       Checkpoint serverStarted = testContext.checkpoint();
       Checkpoint requestsServed = testContext.checkpoint(10);

@@ -16,6 +16,7 @@
 
 package io.vertx.junit5;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,9 +29,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
+@DisplayName("Unit test for CountingCheckpoint")
 class CountingCheckpointTest {
 
   @Test
+  @DisplayName("Smoke tests")
   void smoke_test() {
     AtomicBoolean success = new AtomicBoolean(false);
     AtomicReference<Checkpoint> witness = new AtomicReference<>();
@@ -57,6 +60,7 @@ class CountingCheckpointTest {
   };
 
   @Test
+  @DisplayName("Refuse null triggers")
   void refuse_null_triggers() {
     assertThrows(NullPointerException.class, () -> CountingCheckpoint.laxCountingCheckpoint(null, 1));
     assertThrows(NullPointerException.class, () -> CountingCheckpoint.strictCountingCheckpoint(v -> {
@@ -64,16 +68,19 @@ class CountingCheckpointTest {
   }
 
   @Test
+  @DisplayName("Refuse having 0 expected passes")
   void refuse_zero_passes() {
     assertThrows(IllegalArgumentException.class, () -> CountingCheckpoint.laxCountingCheckpoint(NOOP, 0));
   }
 
   @Test
+  @DisplayName("Refuse having negative expected passes")
   void refuse_negative_passes() {
     assertThrows(IllegalArgumentException.class, () -> CountingCheckpoint.laxCountingCheckpoint(NOOP, -1));
   }
 
   @Test
+  @DisplayName("Check of a lax checkpoint")
   void check_lax_checkpoint() {
     CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(NOOP, 1);
     checkpoint.flag();
@@ -81,6 +88,7 @@ class CountingCheckpointTest {
   }
 
   @Test
+  @DisplayName("Check of a strict checkpoint")
   void check_strict_checkpoint() {
     AtomicReference<Throwable> box = new AtomicReference<>();
     CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(NOOP, box::set, 1);

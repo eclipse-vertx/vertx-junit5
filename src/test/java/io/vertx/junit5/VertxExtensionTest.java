@@ -37,24 +37,29 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
+@DisplayName("Tests of VertxExtension")
 class VertxExtensionTest {
 
   @Nested
   @ExtendWith(VertxExtension.class)
+  @DisplayName("Basic test-level parameter injection smoke tests")
   class Injection {
 
     @Test
+    @DisplayName("Inject a Vertx instance")
     void gimme_vertx(Vertx vertx) {
       assertNotNull(vertx);
     }
 
     @Test
+    @DisplayName("Inject a VertxTestContext instance")
     void gimme_vertx_test_context(VertxTestContext context) {
       assertNotNull(context);
       context.completeNow();
     }
 
     @Test
+    @DisplayName("Inject Vertx and VertxTestContext instances")
     void gimme_everything(Vertx vertx, VertxTestContext context) {
       assertNotNull(vertx);
       assertNotNull(context);
@@ -65,9 +70,11 @@ class VertxExtensionTest {
   @Nested
   @ExtendWith(VertxExtension.class)
   @Timeout(4500)
+  @DisplayName("Specify timeouts")
   class SpecifyTimeout {
 
     @Test
+    @DisplayName("Override a class-level timeout")
     @Timeout(value = 5, timeUnit = TimeUnit.SECONDS)
     void a(VertxTestContext context) throws InterruptedException {
       Thread.sleep(50);
@@ -75,6 +82,7 @@ class VertxExtensionTest {
     }
 
     @Test
+    @DisplayName("Use the class-level timeout")
     void b(VertxTestContext context) throws InterruptedException {
       Thread.sleep(50);
       context.completeNow();
@@ -82,9 +90,11 @@ class VertxExtensionTest {
   }
 
   @Nested
+  @DisplayName("Tests that require embedding a JUnit launcher")
   class EmbeddedWithARunner {
 
     @Test
+    @DisplayName("Check a test failure")
     void checkFailureTest() {
       LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
         .selectors(selectClass(FailureTest.class))
@@ -113,6 +123,7 @@ class VertxExtensionTest {
     }
 
     @Test
+    @DisplayName("Check a failure in the test method body rather than in a callback")
     void checkDirectFailure() {
       LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
         .selectors(selectClass(DirectFailureTest.class))
@@ -140,11 +151,12 @@ class VertxExtensionTest {
     }
   }
 
-  static class UselessVerticle extends AbstractVerticle {
+  private static class UselessVerticle extends AbstractVerticle {
   }
 
   @Nested
   @ExtendWith(VertxExtension.class)
+  @DisplayName("Test parameter injection at various (non-static) levels")
   class VertxInjectionTest {
 
     Vertx currentVertx;
@@ -168,6 +180,7 @@ class VertxExtensionTest {
     }
 
     @RepeatedTest(10)
+    @DisplayName("Test the validity of references and scoping")
     void checkDeployments(Vertx vertx, VertxTestContext testContext) {
       assertThat(testContext).isNotSameAs(previousTestContext);
       previousTestContext = testContext;
@@ -177,8 +190,11 @@ class VertxExtensionTest {
     }
 
     @Nested
+    @DisplayName("A nested test")
     class NestedTest {
+
       @RepeatedTest(10)
+      @DisplayName("Test the validity of references and scoping")
       void checkDeployments(Vertx vertx, VertxTestContext testContext) {
         assertThat(testContext).isNotSameAs(previousTestContext);
         previousTestContext = testContext;

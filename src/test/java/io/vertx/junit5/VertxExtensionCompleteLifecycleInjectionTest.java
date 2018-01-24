@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
+@DisplayName("Test the injection in a complete lifecycle (esp., with @BeforeEach)")
 @ExtendWith(VertxExtension.class)
 class VertxExtensionCompleteLifecycleInjectionTest {
 
@@ -46,6 +47,7 @@ class VertxExtensionCompleteLifecycleInjectionTest {
   }
 
   @Test
+  @DisplayName("Check that the Vertx instance is shared and that VertxTestContext is fresh")
   void test1(Vertx vertx, VertxTestContext testContext) {
     assertThat(vertx).isSameAs(daVertx);
     assertThat(testContext).isNotSameAs(daContext);
@@ -53,6 +55,7 @@ class VertxExtensionCompleteLifecycleInjectionTest {
   }
 
   @Test
+  @DisplayName("Same test, same assumptions")
   void test2(Vertx vertx, VertxTestContext testContext) {
     assertThat(vertx).isSameAs(daVertx);
     assertThat(testContext).isNotSameAs(daContext);

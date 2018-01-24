@@ -18,12 +18,14 @@ package io.vertx.junit5;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(VertxExtension.class)
+@DisplayName("Test @BeforeEach and @BeforeAll methods")
 class AsyncBeforeCombinedTest {
 
   private static volatile int step;

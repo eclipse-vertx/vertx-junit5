@@ -37,9 +37,9 @@
     <junit-jupiter.version>5.0.3</junit-jupiter.version>
     <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
     <junit-platform-surefire-provider.version>1.0.2</junit-platform-surefire-provider.version>
-    <assertj-core.version>3.8.0</assertj-core.version>
+    <assertj-core.version>3.9.0</assertj-core.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
-    <junit-platform-launcher.version>1.0.1</junit-platform-launcher.version>
+    <junit-platform-launcher.version>1.0.3</junit-platform-launcher.version>
   </properties>
 
   <dependencyManagement>

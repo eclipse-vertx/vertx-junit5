@@ -96,6 +96,9 @@ The useful methods in `link:../../apidocs/io/vertx/junit5/VertxTestContext.html[
 * `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#failing--[failing]` to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
 * `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#verify-java.lang.Runnable-[verify]` to perform assertions, any exception thrown from the `java.lang.Runnable` is considered as a test failure.
 
+WARNING: Calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).
+To make a test pass you still need to call `completeNow`, or use checkpoints as explained below.
+
 == Checkpoint when there are multiple success conditions
 
 Many tests can be marked as passed by simply calling `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#completeNow--[completeNow]` at some point of the execution.
@@ -140,6 +143,8 @@ for (int i = 0; i < 10; i++) {
     });
 }
 ----
+
+TIP: Checkpoints should be created only from the test case main thread, not from Vert.x asynchronous event callbacks.
 
 == Integration with JUnit 5
 
@@ -243,7 +248,7 @@ class LifecycleExampleTest {
   @BeforeEach
   @DisplayName("Deploy a verticle")
   void prepare(Vertx vertx, VertxTestContext testContext) {
-    vertx.deployVerticle(new SomeVerticle(), testContext.succeeding());
+    vertx.deployVerticle(new SomeVerticle(), testContext.succeeding(id -> testContext.completeNow()));
   }
 
   @Test

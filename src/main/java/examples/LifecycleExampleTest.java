@@ -37,7 +37,7 @@ class LifecycleExampleTest {
   @BeforeEach
   @DisplayName("Deploy a verticle")
   void prepare(Vertx vertx, VertxTestContext testContext) {
-    vertx.deployVerticle(new SomeVerticle(), testContext.succeeding());
+    vertx.deployVerticle(new SomeVerticle(), testContext.succeeding(id -> testContext.completeNow()));
   }
 
   @Test

@@ -30,6 +30,7 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
@@ -147,6 +148,40 @@ class VertxExtensionTest {
       @Timeout(value = 1, timeUnit = TimeUnit.SECONDS)
       void thisMustFail(VertxTestContext testContext) {
         throw new RuntimeException("YOLO");
+      }
+    }
+
+    @Test
+    @DisplayName("Check a test failure with an intermediate async result verifier")
+    void checkFailureTestWithIntermediateAsyncVerifier() {
+      LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        .selectors(selectClass(FailureWithIntermediateAsyncVerifierTest.class))
+        .build();
+      Launcher launcher = LauncherFactory.create();
+      SummaryGeneratingListener listener = new SummaryGeneratingListener();
+      launcher.registerTestExecutionListeners(listener);
+      launcher.execute(request);
+      TestExecutionSummary summary = listener.getSummary();
+      assertThat(summary.getTestsStartedCount()).isEqualTo(1);
+      assertThat(summary.getTestsFailedCount()).isEqualTo(1);
+      assertThat(summary.getFailures().get(0).getException()).isInstanceOf(AssertionError.class);
+    }
+
+    @Nested
+    @ExtendWith(VertxExtension.class)
+    class FailureWithIntermediateAsyncVerifierTest {
+
+      @Test
+      @Tag("programmatic")
+      void thisMustAlsoFail(Vertx vertx, VertxTestContext testContext) {
+        vertx.executeBlocking(f -> {
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          f.complete(69);
+        }, testContext.succeeding(i -> testContext.verify(() -> assertEquals(58, i))));
       }
     }
   }

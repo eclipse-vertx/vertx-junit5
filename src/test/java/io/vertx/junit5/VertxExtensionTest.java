@@ -95,7 +95,7 @@ class VertxExtensionTest {
   class EmbeddedWithARunner {
 
     @Test
-    @DisplayName("Check a test failure")
+    @DisplayName("⚙️ Check a test failure")
     void checkFailureTest() {
       LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
         .selectors(selectClass(FailureTest.class))
@@ -112,6 +112,7 @@ class VertxExtensionTest {
 
     @Nested
     @ExtendWith(VertxExtension.class)
+    @DisplayName("🚫")
     class FailureTest {
 
       @Test
@@ -124,7 +125,7 @@ class VertxExtensionTest {
     }
 
     @Test
-    @DisplayName("Check a failure in the test method body rather than in a callback")
+    @DisplayName("⚙️ Check a failure in the test method body rather than in a callback")
     void checkDirectFailure() {
       LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
         .selectors(selectClass(DirectFailureTest.class))
@@ -141,6 +142,7 @@ class VertxExtensionTest {
 
     @Nested
     @ExtendWith(VertxExtension.class)
+    @DisplayName("🚫")
     class DirectFailureTest {
 
       @Test
@@ -152,7 +154,7 @@ class VertxExtensionTest {
     }
 
     @Test
-    @DisplayName("Check a test failure with an intermediate async result verifier")
+    @DisplayName("⚙️ Check a test failure with an intermediate async result verifier")
     void checkFailureTestWithIntermediateAsyncVerifier() {
       LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
         .selectors(selectClass(FailureWithIntermediateAsyncVerifierTest.class))
@@ -169,6 +171,7 @@ class VertxExtensionTest {
 
     @Nested
     @ExtendWith(VertxExtension.class)
+    @DisplayName("🚫")
     class FailureWithIntermediateAsyncVerifierTest {
 
       @Test
@@ -203,7 +206,7 @@ class VertxExtensionTest {
       previousTestContext = testContext;
       assertThat(currentVertx).isNotSameAs(vertx);
       currentVertx = vertx;
-      vertx.deployVerticle(new UselessVerticle(), testContext.succeeding());
+      vertx.deployVerticle(new UselessVerticle(), testContext.succeeding(id -> testContext.completeNow()));
     }
 
     @AfterEach
@@ -211,7 +214,7 @@ class VertxExtensionTest {
       assertThat(testContext).isNotSameAs(previousTestContext);
       previousTestContext = testContext;
       assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
-      vertx.close(testContext.succeeding());
+      vertx.close(testContext.succeeding(v -> testContext.completeNow()));
     }
 
     @RepeatedTest(10)

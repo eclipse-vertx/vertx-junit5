@@ -63,6 +63,9 @@ The useful methods in {@link io.vertx.junit5.VertxTestContext} are the following
 * {@link io.vertx.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
 * {@link io.vertx.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the `java.lang.Runnable` is considered as a test failure.
 
+WARNING: Calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).
+To make a test pass you still need to call `completeNow`, or use checkpoints as explained below.
+
 == Checkpoint when there are multiple success conditions
 
 Many tests can be marked as passed by simply calling {@link io.vertx.junit5.VertxTestContext#completeNow} at some point of the execution.
@@ -78,6 +81,8 @@ Here is an example with checkpoints on the HTTP server being started, 10 HTTP re
 ----
 {@link examples.Examples#checkpointing}
 ----
+
+TIP: Checkpoints should be created only from the test case main thread, not from Vert.x asynchronous event callbacks.
 
 == Integration with JUnit 5
 

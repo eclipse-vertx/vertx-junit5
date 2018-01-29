@@ -146,12 +146,9 @@ public final class VertxTestContext {
    * @return the handler.
    */
   public <T> Handler<AsyncResult<T>> succeeding() {
-    Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (!ar.succeeded()) {
         failNow(ar.cause());
-      } else {
-        checkpoint.flag();
       }
     };
   }
@@ -165,10 +162,8 @@ public final class VertxTestContext {
    */
   public <T> Handler<AsyncResult<T>> succeeding(Handler<T> nextHandler) {
     Objects.requireNonNull(nextHandler, "The handler cannot be null");
-    Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
-        checkpoint.flag();
         nextHandler.handle(ar.result());
       } else {
         failNow(ar.cause());
@@ -183,12 +178,9 @@ public final class VertxTestContext {
    * @return the handler.
    */
   public <T> Handler<AsyncResult<T>> failing() {
-    Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
         failNow(new AssertionError("The asynchronous result was expected to have failed"));
-      } else {
-        checkpoint.flag();
       }
     };
   }
@@ -202,12 +194,10 @@ public final class VertxTestContext {
    */
   public <T> Handler<AsyncResult<T>> failing(Handler<Throwable> nextHandler) {
     Objects.requireNonNull(nextHandler, "The handler cannot be null");
-    Checkpoint checkpoint = checkpoint();
     return ar -> {
       if (ar.succeeded()) {
         failNow(new AssertionError("The asynchronous result was expected to have failed"));
       } else {
-        checkpoint.flag();
         nextHandler.handle(ar.cause());
       }
     };

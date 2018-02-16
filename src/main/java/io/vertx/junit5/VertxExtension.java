@@ -23,7 +23,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
-import org.junit.platform.commons.util.AnnotationUtils;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -33,7 +32,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
 
@@ -85,24 +83,30 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         }
       }
       if (store.get(VERTX_INSTANCE_KEY) == null) {
-        Executable injectionTarget = parameterContext.getDeclaringExecutable();
-        if (isAnnotated(injectionTarget, BeforeAll.class)) {
-          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.BEFORE_ALL);
-        } else if (isAnnotated(injectionTarget, BeforeEach.class)) {
-          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.BEFORE_EACH);
-        } else {
-          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.TEST);
-        }
+        store.put(VERTX_INSTANCE_CREATOR_KEY, vertxInstanceCreatorFor(parameterContext.getDeclaringExecutable()));
       }
       return store.getOrComputeIfAbsent(VERTX_INSTANCE_KEY, key -> Vertx.vertx());
     }
     if (type == VertxTestContext.class) {
-      ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
-      VertxTestContext newTestContext = new VertxTestContext();
-      contexts.add(newTestContext);
-      return newTestContext;
+      return newTestContext(store);
     }
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
+  }
+
+  private VertxTestContext newTestContext(Store store) {
+    ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
+    VertxTestContext newTestContext = new VertxTestContext();
+    contexts.add(newTestContext);
+    return newTestContext;
+  }
+
+  private VertxInstanceCreator vertxInstanceCreatorFor(Executable injectionTarget) {
+    if (isAnnotated(injectionTarget, BeforeAll.class)) {
+      return VertxInstanceCreator.BEFORE_ALL;
+    } else if (isAnnotated(injectionTarget, BeforeEach.class)) {
+      return VertxInstanceCreator.BEFORE_EACH;
+    }
+    return VertxInstanceCreator.TEST;
   }
 
   private Store store(ExtensionContext extensionContext) {

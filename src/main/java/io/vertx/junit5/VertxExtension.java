@@ -33,6 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
 
@@ -49,7 +50,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
 
   private final String TEST_CONTEXT_KEY = "VertxTestContext";
   private final String VERTX_INSTANCE_KEY = "VertxInstance";
-  private final String VERTX_INSTANCE_CREATOR_KEY = "VertxInstanceCreator";
+  private final String VERTX_INSTANCE_CREATOR_KEY = "CreationScope";
 
   private static class ContextList extends ArrayList<VertxTestContext> {
     /*
@@ -58,7 +59,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
      */
   }
 
-  private static enum VertxInstanceCreator {
+  private enum CreationScope {
     BEFORE_ALL, BEFORE_EACH, TEST
   }
 
@@ -84,7 +85,12 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);
     if (type == Vertx.class) {
-      return getOrCreateVertx(parameterContext, extensionContext);
+      return getOrCreateScopedObject(
+        parameterContext,
+        extensionContext,
+        VERTX_INSTANCE_KEY,
+        VERTX_INSTANCE_CREATOR_KEY,
+        key -> Vertx.vertx());
     }
     if (type == io.vertx.rxjava.core.Vertx.class) {
       throw new UnsupportedOperationException("RxJava 1 not implemented yet");
@@ -98,18 +104,18 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
 
-  private Vertx getOrCreateVertx(ParameterContext parameterContext, ExtensionContext extensionContext) {
+  private Vertx getOrCreateScopedObject(ParameterContext parameterContext, ExtensionContext extensionContext, String instanceKey, String phaseCreatorKey, Function<String, Vertx> creatorFunction) {
     Store store = store(extensionContext);
     if (extensionContext.getParent().isPresent()) {
       Store parentStore = store(extensionContext.getParent().get());
-      if (parentStore.get(VERTX_INSTANCE_KEY) != null) {
-        return (Vertx) parentStore.get(VERTX_INSTANCE_KEY);
+      if (parentStore.get(instanceKey) != null) {
+        return (Vertx) parentStore.get(instanceKey);
       }
     }
-    if (store.get(VERTX_INSTANCE_KEY) == null) {
-      store.put(VERTX_INSTANCE_CREATOR_KEY, vertxInstanceCreatorFor(parameterContext.getDeclaringExecutable()));
+    if (store.get(instanceKey) == null) {
+      store.put(phaseCreatorKey, scopeFor(parameterContext.getDeclaringExecutable()));
     }
-    return (Vertx) store.getOrComputeIfAbsent(VERTX_INSTANCE_KEY, key -> Vertx.vertx());
+    return (Vertx) store.getOrComputeIfAbsent(instanceKey, creatorFunction);
   }
 
   private VertxTestContext newTestContext(ExtensionContext extensionContext) {
@@ -120,13 +126,13 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     return newTestContext;
   }
 
-  private VertxInstanceCreator vertxInstanceCreatorFor(Executable injectionTarget) {
+  private CreationScope scopeFor(Executable injectionTarget) {
     if (isAnnotated(injectionTarget, BeforeAll.class)) {
-      return VertxInstanceCreator.BEFORE_ALL;
+      return CreationScope.BEFORE_ALL;
     } else if (isAnnotated(injectionTarget, BeforeEach.class)) {
-      return VertxInstanceCreator.BEFORE_EACH;
+      return CreationScope.BEFORE_EACH;
     }
-    return VertxInstanceCreator.TEST;
+    return CreationScope.TEST;
   }
 
   private Store store(ExtensionContext extensionContext) {
@@ -144,7 +150,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     joinActiveTestContexts(context);
 
     // Cleanup the Vertx instance if created by @BeforeEach in the current context
-    checkAndRemoveVertxInstance(context, VertxInstanceCreator.BEFORE_ALL);
+    checkAndRemoveVertxInstance(context, CreationScope.BEFORE_ALL);
   }
 
   @Override
@@ -159,10 +165,10 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     joinActiveTestContexts(context);
 
     // Cleanup the Vertx instance if created by @BeforeEach in the current context
-    checkAndRemoveVertxInstance(context, VertxInstanceCreator.BEFORE_EACH);
+    checkAndRemoveVertxInstance(context, CreationScope.BEFORE_EACH);
   }
 
-  private void checkAndRemoveVertxInstance(ExtensionContext context, VertxInstanceCreator stage) throws Exception {
+  private void checkAndRemoveVertxInstance(ExtensionContext context, CreationScope stage) throws Exception {
     Store store = store(context);
     if (store.get(VERTX_INSTANCE_CREATOR_KEY) == stage) {
       store.remove(VERTX_INSTANCE_CREATOR_KEY);
@@ -201,7 +207,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     joinActiveTestContexts(context);
 
     // Cleanup the Vertx instance if created by the test in the current context
-    checkAndRemoveVertxInstance(context, VertxInstanceCreator.TEST);
+    checkAndRemoveVertxInstance(context, CreationScope.TEST);
   }
 
   private void joinActiveTestContexts(ExtensionContext extensionContext) throws Exception {

@@ -74,26 +74,31 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);
-    Store store = store(extensionContext);
     if (type == Vertx.class) {
-      if (extensionContext.getParent().isPresent()) {
-        Store parentStore = store(extensionContext.getParent().get());
-        if (parentStore.get(VERTX_INSTANCE_KEY) != null) {
-          return parentStore.get(VERTX_INSTANCE_KEY);
-        }
-      }
-      if (store.get(VERTX_INSTANCE_KEY) == null) {
-        store.put(VERTX_INSTANCE_CREATOR_KEY, vertxInstanceCreatorFor(parameterContext.getDeclaringExecutable()));
-      }
-      return store.getOrComputeIfAbsent(VERTX_INSTANCE_KEY, key -> Vertx.vertx());
+      return getOrCreateVertx(parameterContext, extensionContext);
     }
     if (type == VertxTestContext.class) {
-      return newTestContext(store);
+      return newTestContext(extensionContext);
     }
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
 
-  private VertxTestContext newTestContext(Store store) {
+  private Vertx getOrCreateVertx(ParameterContext parameterContext, ExtensionContext extensionContext) {
+    Store store = store(extensionContext);
+    if (extensionContext.getParent().isPresent()) {
+      Store parentStore = store(extensionContext.getParent().get());
+      if (parentStore.get(VERTX_INSTANCE_KEY) != null) {
+        return (Vertx) parentStore.get(VERTX_INSTANCE_KEY);
+      }
+    }
+    if (store.get(VERTX_INSTANCE_KEY) == null) {
+      store.put(VERTX_INSTANCE_CREATOR_KEY, vertxInstanceCreatorFor(parameterContext.getDeclaringExecutable()));
+    }
+    return (Vertx) store.getOrComputeIfAbsent(VERTX_INSTANCE_KEY, key -> Vertx.vertx());
+  }
+
+  private VertxTestContext newTestContext(ExtensionContext extensionContext) {
+    Store store = store(extensionContext);
     ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
     VertxTestContext newTestContext = new VertxTestContext();
     contexts.add(newTestContext);

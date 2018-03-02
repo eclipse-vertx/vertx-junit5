@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -61,10 +62,18 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     BEFORE_ALL, BEFORE_EACH, TEST
   }
 
+  private static final HashSet<Class> INJECTABLE_TYPES = new HashSet<Class>() {
+    {
+      add(Vertx.class);
+      add(VertxTestContext.class);
+      add(io.vertx.rxjava.core.Vertx.class);
+      add(io.vertx.reactivex.core.Vertx.class);
+    }
+  };
+
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    Class<?> type = parameterType(parameterContext);
-    return type == VertxTestContext.class || type == Vertx.class;
+    return INJECTABLE_TYPES.contains(parameterType(parameterContext));
   }
 
   private Class<?> parameterType(ParameterContext parameterContext) {
@@ -76,6 +85,12 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     Class<?> type = parameterType(parameterContext);
     if (type == Vertx.class) {
       return getOrCreateVertx(parameterContext, extensionContext);
+    }
+    if (type == io.vertx.rxjava.core.Vertx.class) {
+      throw new UnsupportedOperationException("RxJava 1 not implemented yet");
+    }
+    if (type == io.vertx.reactivex.core.Vertx.class) {
+      throw new UnsupportedOperationException("RxJava 2 not implemented yet");
     }
     if (type == VertxTestContext.class) {
       return newTestContext(extensionContext);

@@ -33,6 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
@@ -150,7 +151,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     joinActiveTestContexts(context);
 
     // Cleanup the Vertx instance if created by @BeforeEach in the current context
-    checkAndRemoveVertxInstance(context, CreationScope.BEFORE_ALL);
+    checkAndRemoveScopeObjects(context, CreationScope.BEFORE_ALL);
   }
 
   @Override
@@ -165,14 +166,16 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     joinActiveTestContexts(context);
 
     // Cleanup the Vertx instance if created by @BeforeEach in the current context
-    checkAndRemoveVertxInstance(context, CreationScope.BEFORE_EACH);
+    checkAndRemoveScopeObjects(context, CreationScope.BEFORE_EACH);
   }
 
-  private void checkAndRemoveVertxInstance(ExtensionContext context, CreationScope stage) throws Exception {
-    Store store = store(context);
-    if (store.get(VERTX_INSTANCE_CREATOR_KEY) == stage) {
-      store.remove(VERTX_INSTANCE_CREATOR_KEY);
-      Vertx vertx = store.remove(VERTX_INSTANCE_KEY, Vertx.class);
+  private void checkAndRemoveScopeObjects(ExtensionContext context, CreationScope stage) throws Exception {
+    checkAndRemoveScopedObject(context, stage, VERTX_INSTANCE_KEY, VERTX_INSTANCE_CREATOR_KEY, closeRegularVertx());
+  }
+
+  private ThrowingConsumer closeRegularVertx() {
+    return obj -> {
+      Vertx vertx = (Vertx) obj;
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Throwable> errorBox = new AtomicReference<>();
       vertx.close(ar -> {
@@ -192,7 +195,20 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
           throw new VertxException(throwable);
         }
       }
+    };
+  }
+
+  private interface ThrowingConsumer {
+    void accept(Object obj) throws Exception;
+  }
+
+  private void checkAndRemoveScopedObject(ExtensionContext context, CreationScope stage, String instanceKey, String phaseCreatorKey, ThrowingConsumer cleanupBlock) throws Exception {
+    Store store = store(context);
+    if (store.get(phaseCreatorKey) != stage) {
+      return;
     }
+    store.remove(phaseCreatorKey);
+    cleanupBlock.accept(store.remove(instanceKey));
   }
 
   @Override
@@ -207,7 +223,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     joinActiveTestContexts(context);
 
     // Cleanup the Vertx instance if created by the test in the current context
-    checkAndRemoveVertxInstance(context, CreationScope.TEST);
+    checkAndRemoveScopeObjects(context, CreationScope.TEST);
   }
 
   private void joinActiveTestContexts(ExtensionContext extensionContext) throws Exception {

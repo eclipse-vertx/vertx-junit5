@@ -16,9 +16,9 @@
 
 package io.vertx.junit5;
 
-import io.vertx.rxjava.core.AbstractVerticle;
-import io.vertx.rxjava.core.RxHelper;
-import io.vertx.rxjava.core.Vertx;
+import io.vertx.reactivex.core.AbstractVerticle;
+import io.vertx.reactivex.core.RxHelper;
+import io.vertx.reactivex.core.Vertx;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,11 +26,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(VertxExtension.class)
-@DisplayName("Test the RxJava 1 support")
-class RxJava1Test {
+@DisplayName("Test the RxJava 2 support")
+class RxJava2Test {
 
   @Test
-  @DisplayName("Check the injection of a /io.vertx.rxjava.core.Vertx/ instance")
+  @DisplayName("Check the injection of a /io.vertx.reactivex.core.Vertx/ instance")
   void check_injection(Vertx vertx, VertxTestContext testContext) {
     testContext.verify(() -> {
       assertThat(vertx).isNotNull();
@@ -43,7 +43,6 @@ class RxJava1Test {
   void check_deployment_and_message_send(Vertx vertx, VertxTestContext testContext) {
     RxHelper
       .deployVerticle(vertx, new RxVerticle())
-      .toSingle()
       .flatMap(id -> vertx.eventBus().rxSend("check", "Ok?"))
       .subscribe(
         message -> testContext.verify(() -> {

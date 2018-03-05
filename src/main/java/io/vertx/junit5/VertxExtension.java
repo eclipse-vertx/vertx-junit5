@@ -57,6 +57,9 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   private final String VERTX_RX1_INSTANCE_KEY = "VertxRx1Instance";
   private final String VERTX_RX1_INSTANCE_CREATOR_KEY = "VertxRx1InstanceCreator";
 
+  private final String VERTX_RX2_INSTANCE_KEY = "VertxRx2Instance";
+  private final String VERTX_RX2_INSTANCE_CREATOR_KEY = "VertxRx2InstanceCreator";
+
   private static class ContextList extends ArrayList<VertxTestContext> {
     /*
      * There may be concurrent test contexts to join at a point of time because it is allowed to have several
@@ -106,7 +109,12 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         key -> io.vertx.rxjava.core.Vertx.vertx());
     }
     if (type == io.vertx.reactivex.core.Vertx.class) {
-      throw new UnsupportedOperationException("RxJava 2 not implemented yet");
+      return getOrCreateScopedObject(
+        parameterContext,
+        extensionContext,
+        VERTX_RX2_INSTANCE_KEY,
+        VERTX_RX2_INSTANCE_CREATOR_KEY,
+        key -> io.vertx.reactivex.core.Vertx.vertx());
     }
     if (type == VertxTestContext.class) {
       return newTestContext(extensionContext);
@@ -181,6 +189,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   private void checkAndRemoveScopeObjects(ExtensionContext context, CreationScope stage) throws Exception {
     checkAndRemoveScopedObject(context, stage, VERTX_INSTANCE_KEY, VERTX_INSTANCE_CREATOR_KEY, closeRegularVertx());
     checkAndRemoveScopedObject(context, stage, VERTX_RX1_INSTANCE_KEY, VERTX_RX1_INSTANCE_CREATOR_KEY, closeRx1Vertx());
+    checkAndRemoveScopedObject(context, stage, VERTX_RX2_INSTANCE_KEY, VERTX_RX2_INSTANCE_CREATOR_KEY, closeRx2Vertx());
   }
 
   private ThrowingConsumer closeRegularVertx() {
@@ -211,6 +220,31 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   private ThrowingConsumer closeRx1Vertx() {
     return obj -> {
       io.vertx.rxjava.core.Vertx vertx = (io.vertx.rxjava.core.Vertx) obj;
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<Throwable> errorBox = new AtomicReference<>();
+      vertx.close(ar -> {
+        if (ar.failed()) {
+          errorBox.set(ar.cause());
+        }
+        latch.countDown();
+      });
+      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
+        throw new TimeoutException("Closing the Vertx context timed out");
+      }
+      Throwable throwable = errorBox.get();
+      if (throwable != null) {
+        if (throwable instanceof Exception) {
+          throw (Exception) throwable;
+        } else {
+          throw new VertxException(throwable);
+        }
+      }
+    };
+  }
+
+  private ThrowingConsumer closeRx2Vertx() {
+    return obj -> {
+      io.vertx.reactivex.core.Vertx vertx = (io.vertx.reactivex.core.Vertx) obj;
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Throwable> errorBox = new AtomicReference<>();
       vertx.close(ar -> {

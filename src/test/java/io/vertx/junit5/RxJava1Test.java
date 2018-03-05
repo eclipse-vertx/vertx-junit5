@@ -16,20 +16,48 @@
 
 package io.vertx.junit5;
 
+import io.vertx.rxjava.core.AbstractVerticle;
+import io.vertx.rxjava.core.RxHelper;
 import io.vertx.rxjava.core.Vertx;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 @ExtendWith(VertxExtension.class)
-@Disabled
 @DisplayName("Test the RxJava 1 support")
 class RxJava1Test {
 
   @Test
   @DisplayName("Check the injection of a /io.vertx.rxjava.core.Vertx/ instance")
   void check_injection(Vertx vertx, VertxTestContext testContext) {
+    testContext.verify(() -> {
+      assertThat(vertx).isNotNull();
+      testContext.completeNow();
+    });
+  }
 
+  @Test
+  @DisplayName("Check the deployment and interaction of a Rx1 verticle")
+  void check_deployment_and_message_send(Vertx vertx, VertxTestContext testContext) {
+    RxHelper
+      .deployVerticle(vertx, new RxVerticle())
+      .toSingle()
+      .flatMap(id -> vertx.eventBus().rxSend("check", "Ok?"))
+      .subscribe(
+        message -> testContext.verify(() -> {
+          assertThat(message.body()).isEqualTo("Check!");
+          testContext.completeNow();
+        }),
+        testContext::failNow);
+  }
+}
+
+class RxVerticle extends AbstractVerticle {
+
+  @Override
+  public void start() throws Exception {
+    vertx.eventBus().consumer("check", message -> message.reply("Check!"));
   }
 }

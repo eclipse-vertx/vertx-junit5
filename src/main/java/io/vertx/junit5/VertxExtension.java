@@ -50,8 +50,12 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
   private final String TEST_CONTEXT_KEY = "VertxTestContext";
+
   private final String VERTX_INSTANCE_KEY = "VertxInstance";
-  private final String VERTX_INSTANCE_CREATOR_KEY = "CreationScope";
+  private final String VERTX_INSTANCE_CREATOR_KEY = "VertxInstanceCreator";
+
+  private final String VERTX_RX1_INSTANCE_KEY = "VertxRx1Instance";
+  private final String VERTX_RX1_INSTANCE_CREATOR_KEY = "VertxRx1InstanceCreator";
 
   private static class ContextList extends ArrayList<VertxTestContext> {
     /*
@@ -94,7 +98,12 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         key -> Vertx.vertx());
     }
     if (type == io.vertx.rxjava.core.Vertx.class) {
-      throw new UnsupportedOperationException("RxJava 1 not implemented yet");
+      return getOrCreateScopedObject(
+        parameterContext,
+        extensionContext,
+        VERTX_RX1_INSTANCE_KEY,
+        VERTX_RX1_INSTANCE_CREATOR_KEY,
+        key -> io.vertx.rxjava.core.Vertx.vertx());
     }
     if (type == io.vertx.reactivex.core.Vertx.class) {
       throw new UnsupportedOperationException("RxJava 2 not implemented yet");
@@ -105,18 +114,18 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
 
-  private Vertx getOrCreateScopedObject(ParameterContext parameterContext, ExtensionContext extensionContext, String instanceKey, String phaseCreatorKey, Function<String, Vertx> creatorFunction) {
+  private Object getOrCreateScopedObject(ParameterContext parameterContext, ExtensionContext extensionContext, String instanceKey, String phaseCreatorKey, Function<String, Object> creatorFunction) {
     Store store = store(extensionContext);
     if (extensionContext.getParent().isPresent()) {
       Store parentStore = store(extensionContext.getParent().get());
       if (parentStore.get(instanceKey) != null) {
-        return (Vertx) parentStore.get(instanceKey);
+        return parentStore.get(instanceKey);
       }
     }
     if (store.get(instanceKey) == null) {
       store.put(phaseCreatorKey, scopeFor(parameterContext.getDeclaringExecutable()));
     }
-    return (Vertx) store.getOrComputeIfAbsent(instanceKey, creatorFunction);
+    return store.getOrComputeIfAbsent(instanceKey, creatorFunction);
   }
 
   private VertxTestContext newTestContext(ExtensionContext extensionContext) {
@@ -171,11 +180,37 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
 
   private void checkAndRemoveScopeObjects(ExtensionContext context, CreationScope stage) throws Exception {
     checkAndRemoveScopedObject(context, stage, VERTX_INSTANCE_KEY, VERTX_INSTANCE_CREATOR_KEY, closeRegularVertx());
+    checkAndRemoveScopedObject(context, stage, VERTX_RX1_INSTANCE_KEY, VERTX_RX1_INSTANCE_CREATOR_KEY, closeRx1Vertx());
   }
 
   private ThrowingConsumer closeRegularVertx() {
     return obj -> {
       Vertx vertx = (Vertx) obj;
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<Throwable> errorBox = new AtomicReference<>();
+      vertx.close(ar -> {
+        if (ar.failed()) {
+          errorBox.set(ar.cause());
+        }
+        latch.countDown();
+      });
+      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
+        throw new TimeoutException("Closing the Vertx context timed out");
+      }
+      Throwable throwable = errorBox.get();
+      if (throwable != null) {
+        if (throwable instanceof Exception) {
+          throw (Exception) throwable;
+        } else {
+          throw new VertxException(throwable);
+        }
+      }
+    };
+  }
+
+  private ThrowingConsumer closeRx1Vertx() {
+    return obj -> {
+      io.vertx.rxjava.core.Vertx vertx = (io.vertx.rxjava.core.Vertx) obj;
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Throwable> errorBox = new AtomicReference<>();
       vertx.close(ar -> {

@@ -198,6 +198,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     };
   }
 
+  @FunctionalInterface
   private interface ThrowingConsumer {
     void accept(Object obj) throws Exception;
   }

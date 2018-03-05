@@ -39,8 +39,15 @@ import java.util.function.Function;
 import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
 
 /**
- * JUnit 5 Vert.x extension that allows the injection of {@link Vertx} and {@link VertxTestContext} parameters as well as
- * an automatic lifecycle on the {@link VertxTestContext} instance.
+ * JUnit 5 Vert.x extension that allows parameter injection as well as an automatic lifecycle on the {@link VertxTestContext} instance.
+ * <p>
+ * The following types can be injected:
+ * <ul>
+ *     <li>{@link Vertx}</li>
+ *     <li>{@link VertxTestContext}</li>
+ *     <li>{@link io.vertx.rxjava.core.Vertx}</li>
+ *     <li>{@link io.vertx.rxjava.core.Vertx}</li>
+ * </ul>
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */

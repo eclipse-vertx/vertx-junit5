@@ -166,7 +166,7 @@ This is a problem of JUnit 5 rather than this module. In case of doubt you may a
 
 ==== Support for RxJava 1 and 2 Vertx instances
 
-Reactive extension support in Vert.x is being provided by the `vertx-rx-java` and `vertx-rx-java2` modules.
+Reactive eXtension support in Vert.x is being provided by the `vertx-rx-java` and `vertx-rx-java2` modules.
 They provide shims / wrappers around the Vert.x core APIs, like {@link io.vertx.rxjava.core.Vertx} (RxJava 1) and {@link io.vertx.reactivex.core.Vertx} (RxJava 2).
 
 Instances of these _"Rx-ified"_ `Vertx` classes can be injected in test and lifecycle methods, as in:

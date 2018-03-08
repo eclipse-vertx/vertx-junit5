@@ -46,7 +46,7 @@ import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
  * <li>{@link Vertx}</li>
  * <li>{@link VertxTestContext}</li>
  * <li>{@link io.vertx.rxjava.core.Vertx}</li>
- * <li>{@link io.vertx.rxjava.core.Vertx}</li>
+ * <li>{@link io.vertx.reactivex.core.Vertx}</li>
  * </ul>
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>

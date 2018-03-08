@@ -18,6 +18,7 @@ package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.*;
@@ -33,7 +34,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
@@ -105,7 +105,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         extensionContext,
         VERTX_INSTANCE_KEY,
         VERTX_INSTANCE_CREATOR_KEY,
-        key -> Vertx.vertx());
+        key -> new StoredVertx(Vertx.vertx()));
     }
     if (type == io.vertx.rxjava.core.Vertx.class) {
       return getOrCreateScopedObject(
@@ -134,13 +134,20 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     if (extensionContext.getParent().isPresent()) {
       Store parentStore = store(extensionContext.getParent().get());
       if (parentStore.get(instanceKey) != null) {
-        return parentStore.get(instanceKey);
+        return unpack(parentStore.get(instanceKey));
       }
     }
     if (store.get(instanceKey) == null) {
       store.put(phaseCreatorKey, scopeFor(parameterContext.getDeclaringExecutable()));
     }
-    return store.getOrComputeIfAbsent(instanceKey, creatorFunction);
+    return unpack(store.getOrComputeIfAbsent(instanceKey, creatorFunction));
+  }
+
+  private Object unpack(Object object) {
+    if (object instanceof Supplier) {
+      return ((Supplier) object).get();
+    }
+    return object;
   }
 
   private VertxTestContext newTestContext(ExtensionContext extensionContext) {
@@ -194,7 +201,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   }
 
   private void checkAndRemoveScopeObjects(ExtensionContext context, CreationScope stage) throws Exception {
-    checkAndRemoveScopedObject(context, stage, VERTX_INSTANCE_KEY, VERTX_INSTANCE_CREATOR_KEY, closeRegularVertx());
+    // checkAndRemoveScopedObject(context, stage, VERTX_INSTANCE_KEY, VERTX_INSTANCE_CREATOR_KEY, closeRegularVertx());
     checkAndRemoveScopedObject(context, stage, VERTX_RX1_INSTANCE_KEY, VERTX_RX1_INSTANCE_CREATOR_KEY, closeRx1Vertx());
     checkAndRemoveScopedObject(context, stage, VERTX_RX2_INSTANCE_KEY, VERTX_RX2_INSTANCE_CREATOR_KEY, closeRx2Vertx());
   }
@@ -340,6 +347,24 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
 
     if (extensionContext.getParent().isPresent()) {
       joinActiveTestContexts(extensionContext.getParent().get());
+    }
+  }
+
+  class StoredVertx implements Supplier<Object>, ExtensionContext.Store.CloseableResource {
+
+    final Vertx vertx;
+
+    StoredVertx(Vertx vertx) {
+      this.vertx = vertx;
+    }
+
+    @Override public void close() throws Throwable {
+      System.out.println("Closing regular VertX: " + vertx);
+      closeRegularVertx().accept(vertx);
+    }
+
+    @Override public Object get() {
+      return vertx;
     }
   }
 }

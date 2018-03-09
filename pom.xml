@@ -30,12 +30,12 @@
 
   <properties>
     <stack.version>3.6.0-SNAPSHOT</stack.version>
-    <junit-jupiter.version>5.0.3</junit-jupiter.version>
+    <junit-jupiter.version>5.1.0</junit-jupiter.version>
     <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
-    <junit-platform-surefire-provider.version>1.0.2</junit-platform-surefire-provider.version>
+    <junit-platform-surefire-provider.version>1.1.0</junit-platform-surefire-provider.version>
     <assertj-core.version>3.9.0</assertj-core.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
-    <junit-platform-launcher.version>1.0.3</junit-platform-launcher.version>
+    <junit-platform-launcher.version>1.1.0</junit-platform-launcher.version>
   </properties>
 
   <dependencyManagement>
@@ -51,10 +51,20 @@
   </dependencyManagement>
 
   <dependencies>
+
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java2</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -66,33 +76,39 @@
       <version>${junit-jupiter.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>${junit-platform-launcher.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-docgen</artifactId>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web-client</artifactId>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
+
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj-core.version}</version>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apiguardian</groupId>
       <artifactId>apiguardian-api</artifactId>
       <version>${apiguardian-api.version}</version>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
 
-    <dependency>
-      <groupId>org.junit.platform</groupId>
-      <artifactId>junit-platform-launcher</artifactId>
-      <version>${junit-platform-launcher.version}</version>
-    </dependency>
   </dependencies>
 
   <build>

@@ -23,23 +23,31 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
-import org.junit.platform.commons.util.AnnotationUtils;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
 
 /**
- * JUnit 5 Vert.x extension that allows the injection of {@link Vertx} and {@link VertxTestContext} parameters as well as
- * an automatic lifecycle on the {@link VertxTestContext} instance.
+ * JUnit 5 Vert.x extension that allows parameter injection as well as an automatic lifecycle on the {@link VertxTestContext} instance.
+ * <p>
+ * The following types can be injected:
+ * <ul>
+ * <li>{@link Vertx}</li>
+ * <li>{@link VertxTestContext}</li>
+ * <li>{@link io.vertx.rxjava.core.Vertx}</li>
+ * <li>{@link io.vertx.reactivex.core.Vertx}</li>
+ * </ul>
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
@@ -49,8 +57,15 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
   private final String TEST_CONTEXT_KEY = "VertxTestContext";
+
   private final String VERTX_INSTANCE_KEY = "VertxInstance";
   private final String VERTX_INSTANCE_CREATOR_KEY = "VertxInstanceCreator";
+
+  private final String VERTX_RX1_INSTANCE_KEY = "VertxRx1Instance";
+  private final String VERTX_RX1_INSTANCE_CREATOR_KEY = "VertxRx1InstanceCreator";
+
+  private final String VERTX_RX2_INSTANCE_KEY = "VertxRx2Instance";
+  private final String VERTX_RX2_INSTANCE_CREATOR_KEY = "VertxRx2InstanceCreator";
 
   private static class ContextList extends ArrayList<VertxTestContext> {
     /*
@@ -59,14 +74,22 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
      */
   }
 
-  private static enum VertxInstanceCreator {
+  private enum CreationScope {
     BEFORE_ALL, BEFORE_EACH, TEST
   }
 
+  private static final HashSet<Class> INJECTABLE_TYPES = new HashSet<Class>() {
+    {
+      add(Vertx.class);
+      add(VertxTestContext.class);
+      add(io.vertx.rxjava.core.Vertx.class);
+      add(io.vertx.reactivex.core.Vertx.class);
+    }
+  };
+
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    Class<?> type = parameterType(parameterContext);
-    return type == VertxTestContext.class || type == Vertx.class;
+    return INJECTABLE_TYPES.contains(parameterType(parameterContext));
   }
 
   private Class<?> parameterType(ParameterContext parameterContext) {
@@ -76,33 +99,72 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);
-    Store store = store(extensionContext);
     if (type == Vertx.class) {
-      if (extensionContext.getParent().isPresent()) {
-        Store parentStore = store(extensionContext.getParent().get());
-        if (parentStore.get(VERTX_INSTANCE_KEY) != null) {
-          return parentStore.get(VERTX_INSTANCE_KEY);
-        }
-      }
-      if (store.get(VERTX_INSTANCE_KEY) == null) {
-        Executable injectionTarget = parameterContext.getDeclaringExecutable();
-        if (isAnnotated(injectionTarget, BeforeAll.class)) {
-          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.BEFORE_ALL);
-        } else if (isAnnotated(injectionTarget, BeforeEach.class)) {
-          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.BEFORE_EACH);
-        } else {
-          store.put(VERTX_INSTANCE_CREATOR_KEY, VertxInstanceCreator.TEST);
-        }
-      }
-      return store.getOrComputeIfAbsent(VERTX_INSTANCE_KEY, key -> Vertx.vertx());
+      return getOrCreateScopedObject(
+        parameterContext,
+        extensionContext,
+        VERTX_INSTANCE_KEY,
+        VERTX_INSTANCE_CREATOR_KEY,
+        key -> new ScopedObject<>(Vertx.vertx(), closeRegularVertx()));
+    }
+    if (type == io.vertx.rxjava.core.Vertx.class) {
+      return getOrCreateScopedObject(
+        parameterContext,
+        extensionContext,
+        VERTX_RX1_INSTANCE_KEY,
+        VERTX_RX1_INSTANCE_CREATOR_KEY,
+        key -> new ScopedObject<>(io.vertx.rxjava.core.Vertx.vertx(), closeRx1Vertx()));
+    }
+    if (type == io.vertx.reactivex.core.Vertx.class) {
+      return getOrCreateScopedObject(
+        parameterContext,
+        extensionContext,
+        VERTX_RX2_INSTANCE_KEY,
+        VERTX_RX2_INSTANCE_CREATOR_KEY,
+        key -> new ScopedObject<>(io.vertx.reactivex.core.Vertx.vertx(), closeRx2Vertx()));
     }
     if (type == VertxTestContext.class) {
-      ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
-      VertxTestContext newTestContext = new VertxTestContext();
-      contexts.add(newTestContext);
-      return newTestContext;
+      return newTestContext(extensionContext);
     }
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
+  }
+
+  private Object getOrCreateScopedObject(ParameterContext parameterContext, ExtensionContext extensionContext, String instanceKey, String phaseCreatorKey, Function<String, Object> creatorFunction) {
+    Store store = store(extensionContext);
+    if (extensionContext.getParent().isPresent()) {
+      Store parentStore = store(extensionContext.getParent().get());
+      if (parentStore.get(instanceKey) != null) {
+        return unpack(parentStore.get(instanceKey));
+      }
+    }
+    if (store.get(instanceKey) == null) {
+      store.put(phaseCreatorKey, scopeFor(parameterContext.getDeclaringExecutable()));
+    }
+    return unpack(store.getOrComputeIfAbsent(instanceKey, creatorFunction));
+  }
+
+  private Object unpack(Object object) {
+    if (object instanceof Supplier) {
+      return ((Supplier) object).get();
+    }
+    return object;
+  }
+
+  private VertxTestContext newTestContext(ExtensionContext extensionContext) {
+    Store store = store(extensionContext);
+    ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
+    VertxTestContext newTestContext = new VertxTestContext();
+    contexts.add(newTestContext);
+    return newTestContext;
+  }
+
+  private CreationScope scopeFor(Executable injectionTarget) {
+    if (isAnnotated(injectionTarget, BeforeAll.class)) {
+      return CreationScope.BEFORE_ALL;
+    } else if (isAnnotated(injectionTarget, BeforeEach.class)) {
+      return CreationScope.BEFORE_EACH;
+    }
+    return CreationScope.TEST;
   }
 
   private Store store(ExtensionContext extensionContext) {
@@ -118,9 +180,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   public void afterAll(ExtensionContext context) throws Exception {
     // We may wait on test contexts from @AfterAll methods
     joinActiveTestContexts(context);
-
-    // Cleanup the Vertx instance if created by @BeforeEach in the current context
-    checkAndRemoveVertxInstance(context, VertxInstanceCreator.BEFORE_ALL);
   }
 
   @Override
@@ -133,36 +192,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   public void afterEach(ExtensionContext context) throws Exception {
     // We may wait on test contexts from @AfterEach methods
     joinActiveTestContexts(context);
-
-    // Cleanup the Vertx instance if created by @BeforeEach in the current context
-    checkAndRemoveVertxInstance(context, VertxInstanceCreator.BEFORE_EACH);
-  }
-
-  private void checkAndRemoveVertxInstance(ExtensionContext context, VertxInstanceCreator stage) throws Exception {
-    Store store = store(context);
-    if (store.get(VERTX_INSTANCE_CREATOR_KEY) == stage) {
-      store.remove(VERTX_INSTANCE_CREATOR_KEY);
-      Vertx vertx = store.remove(VERTX_INSTANCE_KEY, Vertx.class);
-      CountDownLatch latch = new CountDownLatch(1);
-      AtomicReference<Throwable> errorBox = new AtomicReference<>();
-      vertx.close(ar -> {
-        if (ar.failed()) {
-          errorBox.set(ar.cause());
-        }
-        latch.countDown();
-      });
-      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
-        throw new TimeoutException("Closing the Vertx context timed out");
-      }
-      Throwable throwable = errorBox.get();
-      if (throwable != null) {
-        if (throwable instanceof Exception) {
-          throw (Exception) throwable;
-        } else {
-          throw new VertxException(throwable);
-        }
-      }
-    }
   }
 
   @Override
@@ -175,9 +204,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   public void afterTestExecution(ExtensionContext context) throws Exception {
     // We may wait on the test context from a test
     joinActiveTestContexts(context);
-
-    // Cleanup the Vertx instance if created by the test in the current context
-    checkAndRemoveVertxInstance(context, VertxInstanceCreator.TEST);
   }
 
   private void joinActiveTestContexts(ExtensionContext extensionContext) throws Exception {
@@ -218,5 +244,103 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     if (extensionContext.getParent().isPresent()) {
       joinActiveTestContexts(extensionContext.getParent().get());
     }
+  }
+
+  @FunctionalInterface
+  private interface ThrowingConsumer<T> {
+    void accept(T obj) throws Exception;
+  }
+
+  private static class ScopedObject <T> implements Supplier<T>, ExtensionContext.Store.CloseableResource {
+
+    private final T object;
+    private final ThrowingConsumer<T> cleaner;
+
+    ScopedObject(T object, ThrowingConsumer<T> cleaner) {
+      this.object = object;
+      this.cleaner = cleaner;
+    }
+
+    @Override
+    public void close() throws Throwable {
+      cleaner.accept(object);
+    }
+
+    @Override
+    public T get() {
+      return object;
+    }
+  }
+
+  private ThrowingConsumer<Vertx> closeRegularVertx() {
+    return vertx -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<Throwable> errorBox = new AtomicReference<>();
+      vertx.close(ar -> {
+        if (ar.failed()) {
+          errorBox.set(ar.cause());
+        }
+        latch.countDown();
+      });
+      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
+        throw new TimeoutException("Closing the Vertx context timed out");
+      }
+      Throwable throwable = errorBox.get();
+      if (throwable != null) {
+        if (throwable instanceof Exception) {
+          throw (Exception) throwable;
+        } else {
+          throw new VertxException(throwable);
+        }
+      }
+    };
+  }
+
+  private ThrowingConsumer<io.vertx.rxjava.core.Vertx> closeRx1Vertx() {
+    return vertx -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<Throwable> errorBox = new AtomicReference<>();
+      vertx.close(ar -> {
+        if (ar.failed()) {
+          errorBox.set(ar.cause());
+        }
+        latch.countDown();
+      });
+      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
+        throw new TimeoutException("Closing the Vertx context timed out");
+      }
+      Throwable throwable = errorBox.get();
+      if (throwable != null) {
+        if (throwable instanceof Exception) {
+          throw (Exception) throwable;
+        } else {
+          throw new VertxException(throwable);
+        }
+      }
+    };
+  }
+
+  private ThrowingConsumer<io.vertx.reactivex.core.Vertx> closeRx2Vertx() {
+    return vertx -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<Throwable> errorBox = new AtomicReference<>();
+      vertx.close(ar -> {
+        if (ar.failed()) {
+          errorBox.set(ar.cause());
+        }
+        latch.countDown();
+      });
+      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
+        throw new TimeoutException("Closing the Vertx context timed out");
+      }
+      Throwable throwable = errorBox.get();
+      if (throwable != null) {
+        if (throwable instanceof Exception) {
+          throw (Exception) throwable;
+        } else {
+          throw new VertxException(throwable);
+        }
+      }
+    };
   }
 }

@@ -163,3 +163,15 @@ As an example, it is possible to define 3 `@BeforeEach` methods on the same test
 Because of asynchronous operations it is possible that the effects of these methods happen concurrently rather than sequentially, which may lead to inconsistent states.
 
 This is a problem of JUnit 5 rather than this module. In case of doubt you may always wonder why a single method can't be better than many.
+
+==== Support for RxJava 1 and 2 Vertx instances
+
+Reactive eXtension support in Vert.x is being provided by the `vertx-rx-java` and `vertx-rx-java2` modules.
+They provide shims / wrappers around the Vert.x core APIs, like {@link io.vertx.rxjava.core.Vertx} (RxJava 1) and {@link io.vertx.reactivex.core.Vertx} (RxJava 2).
+
+Instances of these _"Rx-ified"_ `Vertx` classes can be injected in test and lifecycle methods, as in:
+
+[source,java]
+----
+{@link examples.RxJava2Test}
+----

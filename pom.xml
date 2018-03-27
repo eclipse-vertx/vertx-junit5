@@ -19,8 +19,8 @@
 
   <parent>
     <groupId>io.vertx</groupId>
-    <artifactId>vertx-parent</artifactId>
-    <version>12</version>
+    <artifactId>vertx-ext-parent</artifactId>
+    <version>34</version>
   </parent>
 
   <artifactId>vertx-junit5</artifactId>
@@ -52,6 +52,11 @@
 
   <dependencies>
 
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-codegen</artifactId>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
@@ -133,63 +138,6 @@
             <excludeTags>programmatic</excludeTags>
           </properties>
         </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-compile</id>
-            <configuration>
-              <annotationProcessors>
-                <annotationProcessor>io.vertx.docgen.JavaDocGenProcessor</annotationProcessor>
-              </annotationProcessors>
-              <compilerArgs>
-                <arg>-Adocgen.output=${asciidoc.dir}/output</arg>
-                <arg>-Adocgen.source=${asciidoc.dir}/index.adoc</arg>
-              </compilerArgs>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.asciidoctor</groupId>
-        <artifactId>asciidoctor-maven-plugin</artifactId>
-        <configuration>
-          <sourceDirectory>${asciidoc.dir}/output</sourceDirectory>
-          <outputDirectory>${project.build.directory}/docs/${project.artifactId}</outputDirectory>
-          <sourceHighlighter>coderay</sourceHighlighter>
-          <preserveDirectories>true</preserveDirectories>
-          <relativeBaseDir>true</relativeBaseDir>
-          <backend>html</backend>
-          <doctype>book</doctype>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>process-asciidoc</goal>
-            </goals>
-            <phase>prepare-package</phase>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>package-docs</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <attach>true</attach>
-              <descriptors>
-                <descriptor>src/assembly/docs.xml</descriptor>
-              </descriptors>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

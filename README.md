@@ -9,7 +9,8 @@ WARNING: This module has Tech Preview status, this means the API can change betw
 
 ## Documentation
 
-See [src/main/asciidoc/output/index.adoc](src/main/asciidoc/output/index.adoc).
+* [Manual](https://vertx.io/docs/vertx-junit5/java/)
+* [API](https://vertx.io/docs/apidocs/)
 
 ## License
 

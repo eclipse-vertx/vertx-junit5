@@ -30,12 +30,12 @@
 
   <properties>
     <stack.version>3.6.0-SNAPSHOT</stack.version>
-    <junit-jupiter.version>5.1.0</junit-jupiter.version>
-    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
-    <junit-platform-surefire-provider.version>1.1.0</junit-platform-surefire-provider.version>
-    <assertj-core.version>3.9.0</assertj-core.version>
+    <junit-jupiter.version>5.2.0</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
-    <junit-platform-launcher.version>1.1.0</junit-platform-launcher.version>
+    <assertj-core.version>3.10.0</assertj-core.version>
+    <maven-surefire-plugin.version>2.21.0</maven-surefire-plugin.version>
+    <junit-platform-surefire-provider.version>1.2.0</junit-platform-surefire-provider.version>
+    <junit-platform-launcher.version>1.2.0</junit-platform-launcher.version>
   </properties>
 
   <dependencyManagement>

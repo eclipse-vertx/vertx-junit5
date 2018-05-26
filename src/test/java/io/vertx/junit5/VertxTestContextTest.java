@@ -214,4 +214,13 @@ class VertxTestContextTest {
     assertThat(context.failed()).isFalse();
     assertThat(context.causeOfFailure()).isNull();
   }
+
+  @Test
+  @DisplayName("Just fail immediately and on the test runner thread")
+  void just_fail() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context.failNow(new RuntimeException("Woops"));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.failed()).isTrue();
+  }
 }

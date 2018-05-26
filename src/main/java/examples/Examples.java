@@ -56,7 +56,7 @@ public class Examples {
   class BTest {
 
     @Test
-    void start_http_server() throws InterruptedException {
+    void start_http_server() throws Throwable {
       VertxTestContext testContext = new VertxTestContext();
 
       Vertx vertx = Vertx.vertx();
@@ -65,6 +65,9 @@ public class Examples {
         .listen(16969, testContext.succeeding(ar -> testContext.completeNow())); // <1>
 
       assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue(); // <2>
+      if (testContext.failed()) {  // <3>
+        throw testContext.causeOfFailure();
+      }
     }
   }
 

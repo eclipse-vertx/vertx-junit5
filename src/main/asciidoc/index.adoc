@@ -43,6 +43,7 @@ Here is a very basic usage:
 ----
 <1> {@link io.vertx.junit5.VertxTestContext#succeeding} returns an asynchronous result handler that is expected to succeed, and {@link io.vertx.junit5.VertxTestContext#completeNow} makes the test pass.
 <2> {@link io.vertx.junit5.VertxTestContext#awaitCompletion} has the semantics of a `java.util.concurrent.CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
+<3> If the context captures a (potentially asynchronous) error, then after completion we must throw the failure exception to make the test fail.
 
 == Use any assertion library
 

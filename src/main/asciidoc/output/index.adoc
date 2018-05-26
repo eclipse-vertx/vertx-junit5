@@ -55,7 +55,7 @@ Here is a very basic usage:
 class BTest {
 
   @Test
-  void start_http_server() throws InterruptedException {
+  void start_http_server() throws Throwable {
     VertxTestContext testContext = new VertxTestContext();
 
     Vertx vertx = Vertx.vertx();
@@ -64,11 +64,15 @@ class BTest {
       .listen(16969, testContext.succeeding(ar -> testContext.completeNow())); // <1>
 
     assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue(); // <2>
+    if (testContext.failed()) {  // <3>
+      throw testContext.causeOfFailure();
+    }
   }
 }
 ----
 <1> `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#succeeding--[succeeding]` returns an asynchronous result handler that is expected to succeed, and `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#completeNow--[completeNow]` makes the test pass.
 <2> `link:../../apidocs/io/vertx/junit5/VertxTestContext.html#awaitCompletion-long-java.util.concurrent.TimeUnit-[awaitCompletion]` has the semantics of a `java.util.concurrent.CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
+<3> If the context captures a (potentially asynchronous) error, then after completion we must throw the failure exception to make the test fail.
 
 == Use any assertion library
 

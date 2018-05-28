@@ -15,29 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Convenient base class to extend when writing asynchronous RxJava 2.x-based Vertx tests.
  */
 @ExtendWith(VertxExtension.class)
-public abstract class AbstractRxJava2VertxTest {
-  /**
-   * Default timeout value for an asynchronous test.
-   */
-  public static final long DEFAULT_TIMEOUT = 60;
-
-  /**
-   * The {@link TimeUnit} of the {@link #DEFAULT_TIMEOUT}.
-   */
-  public static final TimeUnit DEFAULT_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
-
-  /**
-   * Functional interface used in conjunction with <code>testSingle()</code> methods.
-   *
-   * @param <T>
-   * @see #testSingle(VertxTestContext, Callable, Verifiable)
-   * @see #testSingle(VertxTestContext, long, TimeUnit, Callable, Verifiable)
-   */
-  @FunctionalInterface
-  protected interface Verifiable<T> {
-    void verify(T it);
-  }
-
+public abstract class AbstractRxJava2VertxTest extends AbstractRxJavaVertxTest {
   /**
    * Conveniently asynchronously tests a block of code that returns a {@link Single}, then provides the instance wrapped
    * by the {@link Single}, of type <code>T</code>, to a block that can perform assertions on the given instance.
@@ -125,29 +103,5 @@ public abstract class AbstractRxJava2VertxTest {
       context.failNow(t);
     }
     assertTrue(context.awaitCompletion(timeout, timeUnit));
-  }
-
-  protected io.vertx.core.Vertx vertx;
-  protected Vertx rxvertx;
-
-  @BeforeEach
-  public void beforeEach(io.vertx.core.Vertx vertx) {
-    this.vertx = vertx;
-    this.rxvertx = new Vertx(vertx);
-  }
-
-  /**
-   * Returns the {@link io.vertx.core.Vertx} instance injected into the test instance.
-   */
-  public io.vertx.core.Vertx getVertx() {
-    return vertx;
-  }
-
-  /**
-   * Retrns the {@link Vertx} instance constructed from the {@link io.vertx.core.Vertx} instance
-   * injected into the test instance.
-   */
-  public Vertx getRxVertx() {
-    return rxvertx;
   }
 }

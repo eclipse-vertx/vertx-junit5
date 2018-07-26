@@ -203,6 +203,22 @@ public final class VertxTestContext {
     };
   }
 
+  /**
+   * Create an asynchronous result handler that expects a success to then complete the test context.
+   *
+   * @param <T> the asynchronous result type.
+   * @return the handler.
+   */
+  public <T> Handler<AsyncResult<T>> completing() {
+    return ar -> {
+      if (ar.succeeded()) {
+        completeNow();
+      } else {
+        failNow(ar.cause());
+      }
+    };
+  }
+
   // ........................................................................................... //
 
   /**

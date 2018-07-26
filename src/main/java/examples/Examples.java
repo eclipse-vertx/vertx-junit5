@@ -62,7 +62,7 @@ public class Examples {
       Vertx vertx = Vertx.vertx();
       vertx.createHttpServer()
         .requestHandler(req -> req.response().end())
-        .listen(16969, testContext.succeeding(ar -> testContext.completeNow())); // <1>
+        .listen(16969, testContext.completing()); // <1>
 
       assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue(); // <2>
       if (testContext.failed()) {  // <3>
@@ -157,7 +157,7 @@ public class Examples {
       // Deploy the verticle and execute the test methods when the verticle is successfully deployed
       @BeforeEach
       void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
-        vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding());
+        vertx.deployVerticle(new HttpServerVerticle(), testContext.completing());
       }
 
       // Repeat this test 3 times

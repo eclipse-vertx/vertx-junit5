@@ -41,7 +41,7 @@ Here is a very basic usage:
 ----
 {@link examples.Examples.BTest}
 ----
-<1> {@link io.vertx.junit5.VertxTestContext#succeeding} returns an asynchronous result handler that is expected to succeed, and {@link io.vertx.junit5.VertxTestContext#completeNow} makes the test pass.
+<1> {@link io.vertx.junit5.VertxTestContext#completing} returns an asynchronous result handler that is expected to succeed and then make the test context pass.
 <2> {@link io.vertx.junit5.VertxTestContext#awaitCompletion} has the semantics of a `java.util.concurrent.CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
 <3> If the context captures a (potentially asynchronous) error, then after completion we must throw the failure exception to make the test fail.
 
@@ -60,11 +60,12 @@ To make assertions in asynchronous code and make sure that {@link io.vertx.junit
 The useful methods in {@link io.vertx.junit5.VertxTestContext} are the following:
 
 * {@link io.vertx.junit5.VertxTestContext#completeNow} and {@link io.vertx.junit5.VertxTestContext#failNow} to notify of a success or failure
+* {@link io.vertx.junit5.VertxTestContext#completing} to provide `Handler<AsyncResult<T>>` handlers that expect a success and then completes the test context
 * {@link io.vertx.junit5.VertxTestContext#succeeding} to provide `Handler<AsyncResult<T>>` handlers that expect a success, and optionally pass the result to another callback
 * {@link io.vertx.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
 * {@link io.vertx.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the `java.lang.Runnable` is considered as a test failure.
 
-WARNING: Calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).
+WARNING: Unlike `completing()`, calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).
 To make a test pass you still need to call `completeNow`, or use checkpoints as explained below.
 
 == Checkpoint when there are multiple success conditions

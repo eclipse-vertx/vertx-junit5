@@ -236,7 +236,9 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
             }
           }
         } else {
-          throw new TimeoutException("The test execution timed out");
+          throw new TimeoutException("The test execution timed out. Make sure your asynchronous code "
+            + "includes calls to either VertxTestContext#completeNow(), VertxTestContext#failNow() "
+            + "or Checkpoint#flag()");
         }
       }
     }

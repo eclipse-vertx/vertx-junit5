@@ -31,6 +31,7 @@ final class CountingCheckpoint implements Checkpoint {
   private final int requiredNumberOfPasses;
 
   private int numberOfPasses = 0;
+  private boolean satisfied = false;
 
   static CountingCheckpoint laxCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, int requiredNumberOfPasses) {
     return new CountingCheckpoint(satisfactionTrigger, null, requiredNumberOfPasses);
@@ -51,22 +52,24 @@ final class CountingCheckpoint implements Checkpoint {
     this.requiredNumberOfPasses = requiredNumberOfPasses;
   }
 
-  private boolean isStrict() {
-    return overuseTrigger != null;
-  }
-
   @Override
   public void flag() {
-    boolean callSatisfactionTrigger;
-    boolean callOveruseTrigger;
+    boolean callSatisfactionTrigger = false;
+    boolean callOveruseTrigger = false;
     synchronized (this) {
-      numberOfPasses = numberOfPasses + 1;
-      callSatisfactionTrigger = numberOfPasses == requiredNumberOfPasses;
-      callOveruseTrigger = isStrict() && numberOfPasses > requiredNumberOfPasses;
+      if (satisfied) {
+        callOveruseTrigger = true;
+      } else {
+        numberOfPasses = numberOfPasses + 1;
+        if (numberOfPasses == requiredNumberOfPasses) {
+          callSatisfactionTrigger = true;
+          satisfied = true;
+        }
+      }
     }
     if (callSatisfactionTrigger) {
       satisfactionTrigger.accept(this);
-    } else if (callOveruseTrigger) {
+    } else if (callOveruseTrigger && overuseTrigger != null) {
       overuseTrigger.accept(new IllegalStateException("Strict checkpoint flagged too many times"));
     }
   }

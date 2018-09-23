@@ -190,7 +190,7 @@ class VertxTestContextTest {
   void check_strict_checkpoint_overuse() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
 
-    Checkpoint a = context.strictCheckpoint();
+    Checkpoint a = context.checkpoint();
     Checkpoint b = context.checkpoint();
     new Thread(a::flag).start();
     new Thread(a::flag).start();
@@ -200,6 +200,25 @@ class VertxTestContextTest {
     assertThat(context.causeOfFailure())
       .isInstanceOf(IllegalStateException.class)
       .hasMessageContaining("flagged too many times");
+  }
+
+  @Test
+  @DisplayName("Check that a lax checkpoint can be flagged more often than required")
+  void check_lax_checkpoint_no_overuse() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+
+    Checkpoint a = context.laxCheckpoint();
+    Checkpoint b = context.checkpoint();
+    new Thread(() -> {
+      a.flag();
+      a.flag();
+      a.flag();
+      b.flag();
+    }).start();
+
+    assertThat(context.awaitCompletion(500, TimeUnit.MILLISECONDS)).isTrue();
+    assertThat(context.failed()).isFalse();
+    assertThat(context.completed()).isTrue();
   }
 
   @Test

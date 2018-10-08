@@ -46,7 +46,7 @@ class RxJava2Test {
   @Test
   @DisplayName("🚀 Start a server and perform requests")
   void server_test(Vertx vertx, VertxTestContext testContext) {
-    Checkpoint checkpoints = testContext.strictCheckpoint(10);
+    Checkpoint checkpoints = testContext.checkpoint(10);
 
     HttpRequest<String> request = WebClient
       .create(vertx)

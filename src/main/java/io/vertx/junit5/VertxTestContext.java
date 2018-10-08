@@ -100,8 +100,8 @@ public final class VertxTestContext {
    *
    * @return a checkpoint that requires 1 pass; more passes are allowed and ignored.
    */
-  public Checkpoint checkpoint() {
-    return checkpoint(1);
+  public Checkpoint laxCheckpoint() {
+    return laxCheckpoint(1);
   }
 
   /**
@@ -110,7 +110,7 @@ public final class VertxTestContext {
    * @param requiredNumberOfPasses the required number of passes to validate the checkpoint.
    * @return a checkpoint that requires several passes; more passes than the required number are allowed and ignored.
    */
-  public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
+  public synchronized Checkpoint laxCheckpoint(int requiredNumberOfPasses) {
     CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     return checkpoint;
@@ -121,8 +121,8 @@ public final class VertxTestContext {
    *
    * @return a checkpoint that requires 1 pass, and makes the context fail if it is called more than once.
    */
-  public Checkpoint strictCheckpoint() {
-    return strictCheckpoint(1);
+  public Checkpoint checkpoint() {
+    return checkpoint(1);
   }
 
   /**
@@ -131,7 +131,7 @@ public final class VertxTestContext {
    * @param requiredNumberOfPasses the required number of passes to validate the checkpoint.
    * @return a checkpoint that requires several passes, but no more or it fails the context.
    */
-  public synchronized Checkpoint strictCheckpoint(int requiredNumberOfPasses) {
+  public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
     CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointSatisfied, this::failNow, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     return checkpoint;

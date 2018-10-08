@@ -96,19 +96,19 @@ public final class VertxTestContext {
   }
 
   /**
-   * Create a checkpoint.
+   * Create a lax checkpoint.
    *
-   * @return a checkpoint that requires 1 pass.
+   * @return a checkpoint that requires 1 pass; more passes are allowed and ignored.
    */
   public Checkpoint checkpoint() {
     return checkpoint(1);
   }
 
   /**
-   * Create a checkpoint.
+   * Create a lax checkpoint.
    *
    * @param requiredNumberOfPasses the required number of passes to validate the checkpoint.
-   * @return a checkpoint that requires several passes.
+   * @return a checkpoint that requires several passes; more passes than the required number are allowed and ignored.
    */
   public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
     CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);

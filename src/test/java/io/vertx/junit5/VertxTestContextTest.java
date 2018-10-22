@@ -262,4 +262,112 @@ class VertxTestContextTest {
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure()).hasMessage("Boo!");
   }
+
+  @Test
+  @DisplayName("Pass future assertComplete")
+  void check_future_completion() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context
+      .assertComplete(Future.succeededFuture("bla"))
+      .compose(s -> context.assertComplete(Future.succeededFuture(s + "bla")))
+      .setHandler(context.succeeding(res -> {
+        assertThat(res).isEqualTo("blabla");
+        context.completeNow();
+      }));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.completed()).isTrue();
+  }
+
+  @Test
+  @DisplayName("Fail future assertComplete")
+  void check_future_completion_failure() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context
+      .assertComplete(Future.succeededFuture("bla"))
+      .compose(s -> context.assertComplete(Future.failedFuture(new IllegalStateException(s + "bla"))))
+      .setHandler(context.succeeding(res -> {
+        context.completeNow();
+      }));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.completed()).isFalse();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure())
+      .isInstanceOf(AssertionError.class);
+    assertThat(context.causeOfFailure().getCause())
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("blabla");
+  }
+
+  @Test
+  @DisplayName("Pass future chain assertComplete")
+  void check_future_chain_completion() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context
+      .assertComplete(Future.succeededFuture("bla")
+        .compose(s -> Future.failedFuture(new IllegalStateException(s + "bla")))
+        .recover(ex -> Future.succeededFuture(ex.getMessage()))
+      )
+      .setHandler(context.succeeding(res -> {
+        assertThat(res).isEqualTo("blabla");
+        context.completeNow();
+      }));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.completed()).isTrue();
+  }
+
+  @Test
+  @DisplayName("Fail future chain assertComplete")
+  void check_future_chain_completion_failure() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context
+      .assertComplete(Future.succeededFuture("bla")
+        .compose(s -> Future.failedFuture(new IllegalStateException(s + "bla")))
+      )
+      .setHandler(context.succeeding(res -> {
+        context.completeNow();
+      }));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.completed()).isFalse();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure())
+      .isInstanceOf(AssertionError.class);
+    assertThat(context.causeOfFailure().getCause())
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("blabla");
+  }
+
+  @Test
+  @DisplayName("Pass future assertFailure")
+  void check_future_failing() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context
+      .assertFailure(Future.failedFuture(new IllegalStateException("bla")))
+      .recover(s -> context.assertFailure(Future.failedFuture(new IllegalStateException(s.getMessage() + "bla"))))
+      .setHandler(context.failing(ex -> {
+        assertThat(ex)
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessage("blabla");
+        context.completeNow();
+      }));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.completed()).isTrue();
+  }
+
+  @Test
+  @DisplayName("Fail future assertComplete")
+  void check_future_failing_failure() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context
+      .assertFailure(Future.failedFuture(new IllegalStateException("bla")))
+      .recover(s -> context.assertFailure(Future.succeededFuture(s.getMessage() + "bla")))
+      .setHandler(context.succeeding(res -> {
+        context.completeNow();
+      }));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.completed()).isFalse();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure())
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("Future is completed with value: blabla");
+  }
 }

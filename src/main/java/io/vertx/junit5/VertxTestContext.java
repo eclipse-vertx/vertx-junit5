@@ -225,7 +225,7 @@ public final class VertxTestContext {
   /**
    * This method allows you to check if a future is completed. 
    * It internally creates a checkpoint.
-   * You can use it in a chain of `Future` method calls.
+   * You can use it in a chain of `Future`.
    *
    * @param fut The future to assert success
    * @return a future with completion result
@@ -245,7 +245,9 @@ public final class VertxTestContext {
   }
 
   /**
-   * This method allows you to check if a future is failed. It internally creates a checkpoint. You can use it in a future chain
+   * This method allows you to check if a future is failed.
+   * It internally creates a checkpoint.
+   * You can use it in a chain of `Future`.
    *
    * @param fut The future to assert failure
    * @return a future with failure result
@@ -254,7 +256,7 @@ public final class VertxTestContext {
     Future<T> newFut = Future.future();
     fut.setHandler(ar -> {
       if (ar.succeeded()) {
-        Throwable ex = new AssertionError("Future is completed with value: " + ar.result());
+        Throwable ex = new AssertionError("Future completed with value: " + ar.result());
         this.failNow(ex);
         newFut.fail(ex);
       } else {

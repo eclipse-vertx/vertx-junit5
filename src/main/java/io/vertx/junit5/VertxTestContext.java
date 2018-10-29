@@ -17,6 +17,7 @@
 package io.vertx.junit5;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 import java.util.HashSet;
@@ -217,6 +218,52 @@ public final class VertxTestContext {
         failNow(ar.cause());
       }
     };
+  }
+
+  // ........................................................................................... //
+
+  /**
+   * This method allows you to check if a future is completed. 
+   * It internally creates a checkpoint.
+   * You can use it in a chain of `Future`.
+   *
+   * @param fut The future to assert success
+   * @return a future with completion result
+   */
+  public <T> Future<T> assertComplete(Future<T> fut) {
+    Future<T> newFut = Future.future();
+    fut.setHandler(ar -> {
+      if (ar.succeeded()) {
+        newFut.complete(ar.result());
+      } else {
+        Throwable ex = new AssertionError("Future failed with exception: " + ar.cause().getMessage(), ar.cause());
+        this.failNow(ex);
+        newFut.fail(ex);
+      }
+    });
+    return newFut;
+  }
+
+  /**
+   * This method allows you to check if a future is failed.
+   * It internally creates a checkpoint.
+   * You can use it in a chain of `Future`.
+   *
+   * @param fut The future to assert failure
+   * @return a future with failure result
+   */
+  public <T> Future<T> assertFailure(Future<T> fut) {
+    Future<T> newFut = Future.future();
+    fut.setHandler(ar -> {
+      if (ar.succeeded()) {
+        Throwable ex = new AssertionError("Future completed with value: " + ar.result());
+        this.failNow(ex);
+        newFut.fail(ex);
+      } else {
+        newFut.fail(ar.cause());
+      }
+    });
+    return newFut;
   }
 
   // ........................................................................................... //

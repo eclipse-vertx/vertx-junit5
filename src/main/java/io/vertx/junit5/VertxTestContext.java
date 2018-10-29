@@ -223,7 +223,9 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   /**
-   * This method allows you to check if a future is completed. It internally creates a checkpoint. You can use it in a future chain
+   * This method allows you to check if a future is completed. 
+   * It internally creates a checkpoint.
+   * You can use it in a chain of `Future` method calls.
    *
    * @param fut The future to assert success
    * @return a future with completion result

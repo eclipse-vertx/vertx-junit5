@@ -368,6 +368,6 @@ class VertxTestContextTest {
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure())
       .isInstanceOf(AssertionError.class)
-      .hasMessage("Future is completed with value: blabla");
+      .hasMessage("Future completed with value: blabla");
   }
 }

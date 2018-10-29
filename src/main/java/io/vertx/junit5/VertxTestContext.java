@@ -234,7 +234,7 @@ public final class VertxTestContext {
       if (ar.succeeded()) {
         newFut.complete(ar.result());
       } else {
-        Throwable ex = new AssertionError("Future is failed with exception: " + ar.cause(), ar.cause());
+        Throwable ex = new AssertionError("Future failed with exception: " + ar.cause().getMessage(), ar.cause());
         this.failNow(ex);
         newFut.fail(ex);
       }

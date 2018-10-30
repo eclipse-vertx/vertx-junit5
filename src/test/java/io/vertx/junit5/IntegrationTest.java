@@ -24,6 +24,7 @@ import io.vertx.ext.web.codec.BodyCodec;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +66,7 @@ class IntegrationTest {
         .listen(16969, testContext.succeeding(ar -> testContext.completeNow()));
 
       assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue();
+      closeVertx(vertx);
     }
 
     @Test
@@ -84,6 +86,13 @@ class IntegrationTest {
       }));
 
       assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue();
+      closeVertx(vertx);
+    }
+
+    private void closeVertx(Vertx vertx) throws InterruptedException {
+      CountDownLatch latch = new CountDownLatch(1);
+      vertx.close(ar -> latch.countDown());
+      assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
     }
   }
 

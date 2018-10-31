@@ -5,8 +5,6 @@
 
 This module offers integration and support for writing Vert.x tests with JUnit 5.
 
-WARNING: This module has Tech Preview status, this means the API can change between versions.
-
 ## Documentation
 
 * [Manual](https://vertx.io/docs/vertx-junit5/java/)

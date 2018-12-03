@@ -18,10 +18,8 @@ package io.vertx.junit5;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -102,44 +100,5 @@ class CountingCheckpointTest {
       .isNotNull()
       .isInstanceOf(IllegalStateException.class)
       .hasMessage("Strict checkpoint flagged too many times");
-  }
-
-  @Test
-  @EnabledIfEnvironmentVariable(named = "SLOW_UNIT_TESTS", matches = ".*")
-  @DisplayName("Check of a lax checkpoint with max value")
-  void check_lax_checkpoint_max_value() {
-    AtomicLong satisfaction = new AtomicLong();
-    CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(
-        s -> satisfaction.incrementAndGet(), 1);
-
-    assertThat(satisfaction).hasValue(0);
-    checkpoint.flag();
-    assertThat(satisfaction).hasValue(1);
-    for (long i = 0; i < 2 * (long) Integer.MAX_VALUE + 2; i++) {
-      checkpoint.flag();
-    }
-    assertThat(satisfaction).hasValue(1);
-  }
-
-  @Test
-  @EnabledIfEnvironmentVariable(named = "SLOW_UNIT_TESTS", matches = ".*")
-  @DisplayName("Check of a strict checkpoint with max value")
-  void check_strict_checkpoint_max_value() {
-    AtomicLong satisfaction = new AtomicLong();
-    AtomicLong overuse = new AtomicLong();
-    CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(
-        s -> satisfaction.incrementAndGet(), o -> overuse.incrementAndGet(), Integer.MAX_VALUE);
-
-    for (int i = 0; i < Integer.MAX_VALUE - 1; i++) {
-      checkpoint.flag();
-    }
-    assertThat(satisfaction).hasValue(0);
-    assertThat(overuse).hasValue(0);
-    checkpoint.flag();
-    assertThat(satisfaction).hasValue(1);
-    assertThat(overuse).hasValue(0);
-    checkpoint.flag();
-    assertThat(satisfaction).hasValue(1);
-    assertThat(overuse).hasValue(1);
   }
 }

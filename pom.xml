@@ -24,12 +24,12 @@
   </parent>
 
   <artifactId>vertx-junit5</artifactId>
-  <version>3.6.1-SNAPSHOT</version>
+  <version>3.6.1</version>
 
   <name>Vert.x JUnit 5 support</name>
 
   <properties>
-    <stack.version>3.6.1-SNAPSHOT</stack.version>
+    <stack.version>3.6.1</stack.version>
     <junit-jupiter.version>5.3.2</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
     <assertj-core.version>3.11.1</assertj-core.version>

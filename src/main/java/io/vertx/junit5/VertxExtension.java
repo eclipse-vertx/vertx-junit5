@@ -67,6 +67,10 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   private final String VERTX_RX2_INSTANCE_KEY = "VertxRx2Instance";
   private final String VERTX_RX2_INSTANCE_CREATOR_KEY = "VertxRx2InstanceCreator";
 
+  private final Supplier<Vertx> vertxSupplier;
+  private final Supplier<io.vertx.rxjava.core.Vertx> vertxRxSupplier;
+  private final Supplier<io.vertx.reactivex.core.Vertx> vertxReactiveSupplier;
+
   private static class ContextList extends ArrayList<VertxTestContext> {
     /*
      * There may be concurrent test contexts to join at a point of time because it is allowed to have several
@@ -87,6 +91,57 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     }
   };
 
+  @SuppressWarnings("unused")
+  private VertxExtension() {
+    this(
+      Vertx::vertx,
+      io.vertx.rxjava.core.Vertx::vertx,
+      io.vertx.reactivex.core.Vertx::vertx
+    );
+  }
+
+  private VertxExtension(
+      Supplier<Vertx> vertxSupplier,
+      Supplier<io.vertx.rxjava.core.Vertx> vertxRxSupplier,
+      Supplier<io.vertx.reactivex.core.Vertx> vertxReactiveSupplier
+  ) {
+    this.vertxSupplier = vertxSupplier;
+    this.vertxRxSupplier = vertxRxSupplier;
+    this.vertxReactiveSupplier = vertxReactiveSupplier;
+  }
+
+
+  public static class Builder {
+
+    Supplier<Vertx> vertxSupplier = Vertx::vertx;
+    Supplier<io.vertx.rxjava.core.Vertx> vertxRxSupplier = io.vertx.rxjava.core.Vertx::vertx;
+    Supplier<io.vertx.reactivex.core.Vertx> vertxReactiveSupplier = io.vertx.reactivex.core.Vertx::vertx;
+
+    public Builder vertx(Supplier<Vertx> vertxSupplier) {
+      this.vertxSupplier = vertxSupplier;
+      return this;
+    }
+
+    public Builder vertxRx(Supplier<io.vertx.rxjava.core.Vertx> vertxRxSupplier) {
+      this.vertxRxSupplier = vertxRxSupplier;
+      return this;
+    }
+
+    public Builder vertxReactive(Supplier<io.vertx.reactivex.core.Vertx> vertxReactiveSupplier) {
+      this.vertxReactiveSupplier = vertxReactiveSupplier;
+      return this;
+    }
+
+    public VertxExtension build() {
+      return new VertxExtension(
+        vertxSupplier,
+        vertxRxSupplier,
+        vertxReactiveSupplier
+      );
+    }
+  }
+
+
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     return INJECTABLE_TYPES.contains(parameterType(parameterContext));
@@ -105,7 +160,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         extensionContext,
         VERTX_INSTANCE_KEY,
         VERTX_INSTANCE_CREATOR_KEY,
-        key -> new ScopedObject<>(Vertx.vertx(), closeRegularVertx()));
+        key -> new ScopedObject<>(vertxSupplier.get(), closeRegularVertx()));
     }
     if (type == io.vertx.rxjava.core.Vertx.class) {
       return getOrCreateScopedObject(
@@ -113,7 +168,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         extensionContext,
         VERTX_RX1_INSTANCE_KEY,
         VERTX_RX1_INSTANCE_CREATOR_KEY,
-        key -> new ScopedObject<>(io.vertx.rxjava.core.Vertx.vertx(), closeRx1Vertx()));
+        key -> new ScopedObject<>(vertxRxSupplier.get(), closeRx1Vertx()));
     }
     if (type == io.vertx.reactivex.core.Vertx.class) {
       return getOrCreateScopedObject(
@@ -121,7 +176,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         extensionContext,
         VERTX_RX2_INSTANCE_KEY,
         VERTX_RX2_INSTANCE_CREATOR_KEY,
-        key -> new ScopedObject<>(io.vertx.reactivex.core.Vertx.vertx(), closeRx2Vertx()));
+        key -> new ScopedObject<>(vertxReactiveSupplier.get(), closeRx2Vertx()));
     }
     if (type == VertxTestContext.class) {
       return newTestContext(extensionContext);

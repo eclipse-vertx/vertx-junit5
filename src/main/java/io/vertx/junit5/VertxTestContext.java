@@ -32,6 +32,19 @@ import java.util.concurrent.TimeUnit;
  */
 public final class VertxTestContext {
 
+  /**
+   * Interface for an executable block of assertion code.
+   *
+   * @see #verify(ExecutionBlock)
+   */
+  @FunctionalInterface
+  public interface ExecutionBlock {
+
+    void apply() throws Throwable;
+  }
+
+  // ........................................................................................... //
+
   private Throwable throwableReference = null;
   private final CountDownLatch releaseLatch = new CountDownLatch(1);
   private final HashSet<Checkpoint> checkpoints = new HashSet<>();
@@ -223,7 +236,7 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   /**
-   * This method allows you to check if a future is completed. 
+   * This method allows you to check if a future is completed.
    * It internally creates a checkpoint.
    * You can use it in a chain of `Future`.
    *
@@ -278,10 +291,10 @@ public final class VertxTestContext {
    * @param block a block of code to execute.
    * @return this context.
    */
-  public VertxTestContext verify(Runnable block) {
+  public VertxTestContext verify(ExecutionBlock block) {
     Objects.requireNonNull(block, "The block cannot be null");
     try {
-      block.run();
+      block.apply();
     } catch (Throwable t) {
       failNow(t);
     }

@@ -18,18 +18,14 @@ package io.vertx.junit5;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
@@ -369,5 +365,18 @@ class VertxTestContextTest {
     assertThat(context.causeOfFailure())
       .isInstanceOf(AssertionError.class)
       .hasMessage("Future completed with value: blabla");
+  }
+
+  @Test
+  @DisplayName("Call verify() with a block that throws an exception")
+  void check_verify_with_exception() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context.verify(() -> {
+      throw new RuntimeException("!");
+    });
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.causeOfFailure())
+      .hasMessage("!")
+      .isInstanceOf(RuntimeException.class);
   }
 }

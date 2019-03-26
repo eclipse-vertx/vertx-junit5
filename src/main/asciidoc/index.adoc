@@ -61,7 +61,7 @@ The useful methods in {@link io.vertx.junit5.VertxTestContext} are the following
 * {@link io.vertx.junit5.VertxTestContext#completing} to provide `Handler<AsyncResult<T>>` handlers that expect a success and then completes the test context
 * {@link io.vertx.junit5.VertxTestContext#succeeding} to provide `Handler<AsyncResult<T>>` handlers that expect a success, and optionally pass the result to another callback
 * {@link io.vertx.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
-* {@link io.vertx.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the `java.lang.Runnable` is considered as a test failure.
+* {@link io.vertx.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the code block is considered as a test failure.
 
 WARNING: Unlike `completing()`, calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).
 To make a test pass you still need to call `completeNow`, or use checkpoints as explained below.

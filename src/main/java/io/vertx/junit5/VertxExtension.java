@@ -18,6 +18,7 @@ package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
+import io.vertx.core.spi.launcher.ExecutionContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.*;
@@ -33,6 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -56,16 +58,16 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   private static final int DEFAULT_TIMEOUT_DURATION = 30;
   private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
-  private final String TEST_CONTEXT_KEY = "VertxTestContext";
+  private static final String TEST_CONTEXT_KEY = "VertxTestContext";
 
-  private final String VERTX_INSTANCE_KEY = "VertxInstance";
-  private final String VERTX_INSTANCE_CREATOR_KEY = "VertxInstanceCreator";
+  private static final String VERTX_INSTANCE_KEY = "VertxInstance";
+  private static final String VERTX_INSTANCE_CREATOR_KEY = "VertxInstanceCreator";
 
-  private final String VERTX_RX1_INSTANCE_KEY = "VertxRx1Instance";
-  private final String VERTX_RX1_INSTANCE_CREATOR_KEY = "VertxRx1InstanceCreator";
+  private static final String VERTX_RX1_INSTANCE_KEY = "VertxRx1Instance";
+  private static final String VERTX_RX1_INSTANCE_CREATOR_KEY = "VertxRx1InstanceCreator";
 
-  private final String VERTX_RX2_INSTANCE_KEY = "VertxRx2Instance";
-  private final String VERTX_RX2_INSTANCE_CREATOR_KEY = "VertxRx2InstanceCreator";
+  private static final String VERTX_RX2_INSTANCE_KEY = "VertxRx2Instance";
+  private static final String VERTX_RX2_INSTANCE_CREATOR_KEY = "VertxRx2InstanceCreator";
 
   private static class ContextList extends ArrayList<VertxTestContext> {
     /*
@@ -100,28 +102,13 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);
     if (type == Vertx.class) {
-      return getOrCreateScopedObject(
-        parameterContext,
-        extensionContext,
-        VERTX_INSTANCE_KEY,
-        VERTX_INSTANCE_CREATOR_KEY,
-        key -> new ScopedObject<>(Vertx.vertx(), closeRegularVertx()));
+      return retrieveVertx(parameterContext.getDeclaringExecutable(), extensionContext);
     }
     if (type == io.vertx.rxjava.core.Vertx.class) {
-      return getOrCreateScopedObject(
-        parameterContext,
-        extensionContext,
-        VERTX_RX1_INSTANCE_KEY,
-        VERTX_RX1_INSTANCE_CREATOR_KEY,
-        key -> new ScopedObject<>(io.vertx.rxjava.core.Vertx.vertx(), closeRx1Vertx()));
+      return retrieveRxJava1Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
     }
     if (type == io.vertx.reactivex.core.Vertx.class) {
-      return getOrCreateScopedObject(
-        parameterContext,
-        extensionContext,
-        VERTX_RX2_INSTANCE_KEY,
-        VERTX_RX2_INSTANCE_CREATOR_KEY,
-        key -> new ScopedObject<>(io.vertx.reactivex.core.Vertx.vertx(), closeRx2Vertx()));
+      return retrieveRxJava2Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
     }
     if (type == VertxTestContext.class) {
       return newTestContext(extensionContext);
@@ -129,7 +116,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
 
-  private Object getOrCreateScopedObject(ParameterContext parameterContext, ExtensionContext extensionContext, String instanceKey, String phaseCreatorKey, Function<String, Object> creatorFunction) {
+  private static Object getOrCreateScopedObject(Executable declaringExecutable, ExtensionContext extensionContext, String instanceKey, String phaseCreatorKey, Function<String, Object> creatorFunction) {
     Store store = store(extensionContext);
     if (extensionContext.getParent().isPresent()) {
       Store parentStore = store(extensionContext.getParent().get());
@@ -137,17 +124,21 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         return unpack(parentStore.get(instanceKey));
       }
     }
-    if (store.get(instanceKey) == null) {
-      store.put(phaseCreatorKey, scopeFor(parameterContext.getDeclaringExecutable()));
+    if (store.get(phaseCreatorKey) == null) {
+      store.put(phaseCreatorKey, scopeFor(declaringExecutable));
     }
     return unpack(store.getOrComputeIfAbsent(instanceKey, creatorFunction));
   }
 
-  private Object unpack(Object object) {
+  private static Object unpack(Object object) {
     if (object instanceof Supplier) {
       return ((Supplier) object).get();
     }
     return object;
+  }
+
+  private void putScopedObject(ExtensionContext extensionContext, String instanceKey, Function<String, Object> creatorObject) {
+    store(extensionContext).getOrComputeIfAbsent(instanceKey, creatorObject);
   }
 
   private VertxTestContext newTestContext(ExtensionContext extensionContext) {
@@ -158,7 +149,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     return newTestContext;
   }
 
-  private CreationScope scopeFor(Executable injectionTarget) {
+  private static CreationScope scopeFor(Executable injectionTarget) {
     if (isAnnotated(injectionTarget, BeforeAll.class)) {
       return CreationScope.BEFORE_ALL;
     } else if (isAnnotated(injectionTarget, BeforeEach.class)) {
@@ -167,8 +158,8 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     return CreationScope.TEST;
   }
 
-  private Store store(ExtensionContext extensionContext) {
-    return extensionContext.getStore(Namespace.create(VertxExtension.class, extensionContext));
+  private static Store store(ExtensionContext extensionContext) {
+    return extensionContext.getStore(Namespace.GLOBAL);
   }
 
   @Override
@@ -255,26 +246,29 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
 
   private static class ScopedObject <T> implements Supplier<T>, ExtensionContext.Store.CloseableResource {
 
-    private final T object;
+    private final Supplier<T> supplier;
+    private T object;
     private final ThrowingConsumer<T> cleaner;
 
-    ScopedObject(T object, ThrowingConsumer<T> cleaner) {
-      this.object = object;
+    ScopedObject(Supplier<T> supplier, ThrowingConsumer<T> cleaner) {
+      this.supplier = supplier;
       this.cleaner = cleaner;
     }
 
     @Override
     public void close() throws Throwable {
-      cleaner.accept(object);
+      if (object != null)
+        cleaner.accept(object);
     }
 
     @Override
     public T get() {
+      if (object == null) this.object = supplier.get();
       return object;
     }
   }
 
-  private ThrowingConsumer<Vertx> closeRegularVertx() {
+  private static ThrowingConsumer<Vertx> closeRegularVertx() {
     return vertx -> {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Throwable> errorBox = new AtomicReference<>();
@@ -298,7 +292,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     };
   }
 
-  private ThrowingConsumer<io.vertx.rxjava.core.Vertx> closeRx1Vertx() {
+  private static ThrowingConsumer<io.vertx.rxjava.core.Vertx> closeRx1Vertx() {
     return vertx -> {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Throwable> errorBox = new AtomicReference<>();
@@ -322,7 +316,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     };
   }
 
-  private ThrowingConsumer<io.vertx.reactivex.core.Vertx> closeRx2Vertx() {
+  private static ThrowingConsumer<io.vertx.reactivex.core.Vertx> closeRx2Vertx() {
     return vertx -> {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Throwable> errorBox = new AtomicReference<>();
@@ -344,5 +338,32 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         }
       }
     };
+  }
+
+  public static Vertx retrieveVertx(Executable declaringExecutable, ExtensionContext context) {
+    return (Vertx) getOrCreateScopedObject(
+      declaringExecutable,
+      context,
+      VERTX_INSTANCE_KEY,
+      VERTX_INSTANCE_CREATOR_KEY,
+      key -> new ScopedObject<>(Vertx::vertx, closeRegularVertx()));
+  }
+
+  public static io.vertx.rxjava.core.Vertx retrieveRxJava1Vertx(Executable declaringExecutable, ExtensionContext context) {
+    return (io.vertx.rxjava.core.Vertx) getOrCreateScopedObject(
+      declaringExecutable,
+      context,
+      VERTX_RX1_INSTANCE_KEY,
+      VERTX_RX1_INSTANCE_CREATOR_KEY,
+      key -> new ScopedObject<>(io.vertx.rxjava.core.Vertx::vertx, closeRx1Vertx()));
+  }
+
+  public static io.vertx.reactivex.core.Vertx retrieveRxJava2Vertx(Executable declaringExecutable, ExtensionContext context) {
+    return (io.vertx.reactivex.core.Vertx) getOrCreateScopedObject(
+      declaringExecutable,
+      context,
+      VERTX_RX2_INSTANCE_KEY,
+      VERTX_RX2_INSTANCE_CREATOR_KEY,
+      key -> new ScopedObject<>(io.vertx.reactivex.core.Vertx::vertx, closeRx2Vertx()));
   }
 }

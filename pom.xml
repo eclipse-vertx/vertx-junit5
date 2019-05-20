@@ -35,6 +35,7 @@
   <name>Vert.x JUnit 5 support</name>
 
   <properties>
+    <doc.skip>true</doc.skip>
     <stack.version>4.0.0-SNAPSHOT</stack.version>
     <junit-jupiter.version>5.4.1</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>

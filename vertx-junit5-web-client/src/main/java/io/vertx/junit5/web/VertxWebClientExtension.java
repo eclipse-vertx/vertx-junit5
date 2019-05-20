@@ -30,6 +30,21 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * JUnit 5 Vert.x Web Client extension that allows parameter injection of WebClient. This extension <b>must</b> be registered after {@link VertxExtension}
+ * <p>
+ * The following types can be injected:
+ * <ul>
+ * <li>{@link WebClient}</li>
+ * <li>{@link io.vertx.rxjava.ext.web.client.WebClient}</li>
+ * <li>{@link io.vertx.reactivex.ext.web.client.WebClient}</li>
+ * </ul>
+ * <p>
+ * If you need to configure {@link WebClientOptions} for your {@link WebClient} you need to declare in your test class a <b>public</b> field
+ * with type {@link WebClientOptions} annotated with {@link WebClientOptionsInject}
+ *
+ * @author <a href="https://slinkydeveloper.com">Francesco Guardiani</a>
+ */
 public class VertxWebClientExtension implements ParameterResolver {
 
   private static String WEB_CLIENT = "WebClient";
@@ -39,7 +54,7 @@ public class VertxWebClientExtension implements ParameterResolver {
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterContext.getParameter().getType();
-    return type.equals(WebClient.class) || type.equals(io.vertx.reactivex.ext.web.client.WebClient.class);
+    return type.equals(WebClient.class) || type.equals(io.vertx.reactivex.ext.web.client.WebClient.class) || type.equals(io.vertx.rxjava.ext.web.client.WebClient.class);
   }
 
   @Override

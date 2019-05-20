@@ -12,17 +12,19 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.opentest4j.AssertionFailedError;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static io.vertx.junit5.web.TestRequest.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith({VertxExtension.class, VertxWebClientExtension.class})
 public class TestRequestTest {
 
   @WebClientOptionsInject
   public WebClientOptions options = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(9000);
-
 
   @Test
   public void testSimpleSend(WebClient client, Vertx vertx, VertxTestContext testContext) {
@@ -65,6 +67,30 @@ public class TestRequestTest {
         .expect(emptyResponse())
         .send(testContext);
     }));
+  }
+
+  @Test
+  public void testFailing(WebClient client, Vertx vertx) throws InterruptedException {
+    VertxTestContext testContext = new VertxTestContext();
+
+    startHttpServer(vertx, req ->
+      req.response()
+        .setStatusCode(500)
+        .end()
+    ).setHandler(testContext.succeeding(h ->
+      testRequest(client.get(""))
+        .expect(statusCode(200))
+        .send(testContext)
+    ));
+
+    testContext.awaitCompletion(1, TimeUnit.SECONDS);
+
+    assertThat(testContext.failed()).isTrue();
+    assertThat(testContext.causeOfFailure())
+      .hasCauseInstanceOf(AssertionFailedError.class);
+
+    assertThat(testContext.causeOfFailure().getStackTrace()[0].getClassName())
+      .isEqualTo(this.getClass().getCanonicalName());
   }
 
   private Future<HttpServer> startHttpServer(Vertx vertx, Consumer<HttpServerRequest> requestHandler) {

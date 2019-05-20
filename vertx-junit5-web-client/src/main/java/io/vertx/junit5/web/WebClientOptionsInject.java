@@ -20,6 +20,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation to configure {@link io.vertx.ext.web.client.WebClient} with {@link io.vertx.ext.web.client.WebClientOptions} in your test.
+ * Look at {@link VertxWebClientExtension} for more details
+ *
+ * @author <a href="https://slinkydeveloper.com">Francesco Guardiani</a>
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface WebClientOptionsInject { }

@@ -6,7 +6,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.streams.Pump;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.junit5.VertxExtension;
@@ -18,7 +17,6 @@ import java.util.function.Consumer;
 
 import static io.vertx.junit5.web.TestRequest.*;
 
-@SuppressWarnings("unchecked")
 @ExtendWith({VertxExtension.class, VertxWebClientExtension.class})
 public class TestRequestTest {
 

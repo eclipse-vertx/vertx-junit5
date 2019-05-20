@@ -42,7 +42,6 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@SuppressWarnings("unchecked")
 public class TestRequest {
 
   WebClient client;
@@ -61,12 +60,14 @@ public class TestRequest {
     this.stackTrace = Thread.currentThread().getStackTrace();
   }
 
-  public TestRequest with(Consumer<HttpRequest<Buffer>>... transformations) {
+  @SafeVarargs
+  public final TestRequest with(Consumer<HttpRequest<Buffer>>... transformations) {
     requestTranformations.addAll(Arrays.asList(transformations));
     return this;
   }
 
-  public TestRequest expect(Consumer<HttpResponse<Buffer>>... asserts) {
+  @SafeVarargs
+  public final TestRequest expect(Consumer<HttpResponse<Buffer>>... asserts) {
     responseAsserts.addAll(Arrays.asList(asserts));
     return this;
   }

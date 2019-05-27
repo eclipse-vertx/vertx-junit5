@@ -61,12 +61,15 @@ public class VertxWebClientExtension implements ParameterResolver {
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterContext.getParameter().getType();
     ExtensionContext.Store store = extensionContext.getStore(ExtensionContext.Namespace.create(VertxWebClientExtension.class, extensionContext));
-    if (WebClient.class.equals(type))
+    if (WebClient.class.equals(type)) {
       return getWebClient(parameterContext, extensionContext, store);
-    if (io.vertx.rxjava.ext.web.client.WebClient.class.equals(type))
+    }
+    if (io.vertx.rxjava.ext.web.client.WebClient.class.equals(type)) {
       return getRx1WebClient(parameterContext, extensionContext, store);
-    if (io.vertx.reactivex.ext.web.client.WebClient.class.equals(type))
+    }
+    if (io.vertx.reactivex.ext.web.client.WebClient.class.equals(type)) {
       return getRx2WebClient(parameterContext, extensionContext, store);
+    }
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
 
@@ -90,10 +93,14 @@ public class VertxWebClientExtension implements ParameterResolver {
 
   private Optional<WebClientOptions> getWebClientOptions(ExtensionContext context) {
     Optional<Class<?>> thisTestClass = context.getTestClass();
-    if (!thisTestClass.isPresent()) return Optional.empty();
+    if (!thisTestClass.isPresent()) {
+      return Optional.empty();
+    }
     List<Field> webClientOptionsField = AnnotationUtils
       .findPublicAnnotatedFields(thisTestClass.get(), WebClientOptions.class, WebClientOptionsInject.class);
-    if (webClientOptionsField.isEmpty()) return Optional.empty();
+    if (webClientOptionsField.isEmpty()) {
+      return Optional.empty();
+    }
     return ReflectionUtils
       .tryToReadFieldValue(webClientOptionsField.get(0), context.getTestInstance().get())
       .toOptional().map(o -> (WebClientOptions)o);

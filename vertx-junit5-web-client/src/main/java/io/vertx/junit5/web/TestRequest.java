@@ -265,8 +265,9 @@ public class TestRequest {
 
   private Handler<AsyncResult<HttpResponse<Buffer>>> generateHandleResponse(VertxTestContext testContext, VertxTestContext.ExecutionBlock onEnd, Future<HttpResponse<Buffer>> fut, StackTraceElement[] stackTrace) {
     return ar -> {
-      if (ar.failed()) testContext.failNow(ar.cause());
-      else {
+      if (ar.failed()) {
+        testContext.failNow(ar.cause());
+      } else {
         testContext.verify(() -> {
           try {
             this.responseAsserts.forEach(c -> c.accept(ar.result()));
@@ -336,8 +337,9 @@ public class TestRequest {
     return req -> {
       try {
         String rawQuery = encoder.toUri().getRawQuery();
-        if (rawQuery != null && !rawQuery.isEmpty())
+        if (rawQuery != null && !rawQuery.isEmpty()) {
           req.putHeader("cookie", encoder.toUri().getRawQuery());
+        }
       } catch (URISyntaxException e) {
         e.printStackTrace();
       }

@@ -15,6 +15,32 @@
     <doc.skip>false</doc.skip>
   </properties>
 
+  <dependencies>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-rx-java2</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web-client</artifactId>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apiguardian</groupId>
+      <artifactId>apiguardian-api</artifactId>
+      <version>${apiguardian-api.version}</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>

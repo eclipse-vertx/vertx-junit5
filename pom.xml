@@ -33,7 +33,7 @@
   <artifactId>vertx-junit5-parent</artifactId>
   <version>4.0.0-SNAPSHOT</version>
 
-  <name>Vert.x JUnit 5 support</name>
+  <name>Vert.x JUnit 5 support :: Parent</name>
 
   <properties>
     <doc.skip>true</doc.skip>

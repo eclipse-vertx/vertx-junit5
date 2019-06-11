@@ -11,6 +11,8 @@
 
   <artifactId>vertx-junit5-web-client</artifactId>
 
+  <name>Vert.x JUnit 5 support :: WebClient support</name>
+
   <properties>
     <doc.skip>false</doc.skip>
   </properties>

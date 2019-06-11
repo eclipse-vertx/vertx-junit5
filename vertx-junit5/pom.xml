@@ -11,6 +11,8 @@
 
   <artifactId>vertx-junit5</artifactId>
 
+  <name>Vert.x JUnit 5 support :: Core</name>
+
   <properties>
     <doc.skip>false</doc.skip>
   </properties>

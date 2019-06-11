@@ -13,8 +13,15 @@
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
-  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>vertx-junit5</module>
+    <module>vertx-junit5-web-client</module>
+  </modules>
 
 
   <parent>
@@ -23,12 +30,13 @@
     <version>34</version>
   </parent>
 
-  <artifactId>vertx-junit5</artifactId>
+  <artifactId>vertx-junit5-parent</artifactId>
   <version>3.8.0-SNAPSHOT</version>
 
-  <name>Vert.x JUnit 5 support</name>
+  <name>Vert.x JUnit 5 support :: Parent</name>
 
   <properties>
+    <doc.skip>true</doc.skip>
     <stack.version>3.8.0-SNAPSHOT</stack.version>
     <junit-jupiter.version>5.4.1</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
@@ -50,13 +58,6 @@
   </dependencyManagement>
 
   <dependencies>
-
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>${junit-jupiter.version}</version>
-    </dependency>
-
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-codegen</artifactId>
@@ -66,14 +67,6 @@
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-rx-java</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-rx-java2</artifactId>
-    </dependency>
 
     <dependency>
       <groupId>io.vertx</groupId>
@@ -81,11 +74,11 @@
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
+
     <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-web-client</artifactId>
-      <scope>provided</scope>
-      <optional>true</optional>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit-jupiter.version}</version>
     </dependency>
 
     <dependency>
@@ -96,32 +89,11 @@
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.apiguardian</groupId>
-      <artifactId>apiguardian-api</artifactId>
-      <version>${apiguardian-api.version}</version>
-      <scope>provided</scope>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-launcher</artifactId>
       <version>${junit-platform-launcher.version}</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
-        <configuration>
-          <excludedGroups>programmatic</excludedGroups>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 
 </project>

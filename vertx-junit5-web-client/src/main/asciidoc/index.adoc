@@ -1,0 +1,99 @@
+= Vert.x JUnit 5 Web Client integration
+:toc: left
+
+This module extends capabilities of https://vertx.io/docs/vertx-junit5/$lang/[Vert.x Junit 5] providing the injection
+of https://vertx.io/docs/vertx-web-client/$lang/[Vert.x Web Client] into your tests. It also provides an API to easily test your
+Web API using the Web Client.
+
+== Use it in your build
+
+* `groupId`: `io.vertx`
+* `artifactId`: `vertx-junit5-web-client`
+* `version`: (current Vert.x release or SNAPSHOT)
+
+== Use Web Client in your tests
+
+To use the Web Client, you need to register the extension {@link io.vertx.junit5.web.VertxWebClientExtension} *after* the
+{@link io.vertx.junit5.VertxExtension}. You can do both:
+
+[source,java]
+---
+{@link examples.MultipleAnnotationsTest}
+---
+
+Or
+
+[source,java]
+---
+{@link examples.SingleAnnotationTest}
+---
+
+Look at https://junit.org/junit5/docs/current/user-guide/#extensions-registration-declarative[JUnit 5 documentation] for more details
+
+Now you can add {@link io.vertx.ext.web.client.WebClient} as a test method parameter, like:
+
+[source,java]
+---
+{@link examples.SimpleTest#myTest}
+---
+
+=== Use `WebClientOptions`
+
+To define {@link io.vertx.ext.web.client.WebClientOptions}, you must create a *public* field in your test class
+annotated with {@link io.vertx.junit5.web.WebClientOptionsInject}:
+
+[source,java]
+---
+{@link examples.WithOptionsTest}
+---
+
+== Testing Http requests
+
+Testing Http requests is usually tedious, error prone and requires a lot of boilerplate.
+If you want to test a request with `WebClient` this is what you usually do:
+
+[source,java]
+---
+{@link examples.TestRequestExample#testWithWebClient}
+---
+
+This module provides {@link io.vertx.junit5.web.TestRequest}, a wrapper of {@link io.vertx.ext.web.client.HttpRequest} that simplifies
+the creation of test requests and asserts on the responses. First, add a static import for all static methods in {@link io.vertx.junit5.web.TestRequest}.
+Now you can rewrite the code in the previous example:
+
+[source,java]
+---
+{@link examples.TestRequestExample#testWithTestRequest}
+---
+
+When the request is completed and there are no assertion failures {@link io.vertx.junit5.VertxTestContext#completeNow()} is called, otherwise the test fails.
+
+You can flag a {@link io.vertx.junit5.Checkpoint} more than completing the `VertxTestContext`:
+
+[source,java]
+---
+{@link examples.TestRequestExample#testWithTestRequestCheckpoint}
+---
+
+You can wrap an already existing `HttpRequest`:
+
+[source,java]
+---
+{@link examples.TestRequestExample#testWithTestRequestWrapping}
+---
+
+Every send method returns a {@link io.vertx.core.Future}, so you can use {@link io.vertx.core.Future#compose} to execute different test requests sequentially:
+
+[source,java]
+---
+{@link examples.TestRequestExample#testWithTestRequestChaining}
+---
+
+You can create your custom assertions:
+
+[source,java]
+---
+{@link examples.TestRequestExample#testWithTestRequestCustomAssert}
+---
+
+Look at {@link io.vertx.junit5.web.TestRequest} static methods for all available asserts.

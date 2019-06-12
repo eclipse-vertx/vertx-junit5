@@ -21,6 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.Json;
@@ -263,7 +264,7 @@ public class TestRequest {
     return internalSend(testContext, h -> req.sendMultipartForm(form, h), onEnd);
   }
 
-  private Handler<AsyncResult<HttpResponse<Buffer>>> generateHandleResponse(VertxTestContext testContext, VertxTestContext.ExecutionBlock onEnd, Future<HttpResponse<Buffer>> fut, StackTraceElement[] stackTrace) {
+  private Handler<AsyncResult<HttpResponse<Buffer>>> generateHandleResponse(VertxTestContext testContext, VertxTestContext.ExecutionBlock onEnd, Promise<HttpResponse<Buffer>> fut, StackTraceElement[] stackTrace) {
     return ar -> {
       if (ar.failed()) {
         testContext.failNow(ar.cause());
@@ -284,15 +285,15 @@ public class TestRequest {
   }
 
   private Future<HttpResponse<Buffer>> internalSend(VertxTestContext testContext, Consumer<Handler<AsyncResult<HttpResponse<Buffer>>>> reqSendFunction, VertxTestContext.ExecutionBlock onEnd) {
-    Future<HttpResponse<Buffer>> fut = Future.future();
+    Promise<HttpResponse<Buffer>> promise = Promise.promise();
     this.requestTranformations.forEach(c -> c.accept(req));
     StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-    reqSendFunction.accept(generateHandleResponse(testContext, onEnd, fut, Arrays.copyOfRange(
+    reqSendFunction.accept(generateHandleResponse(testContext, onEnd, promise, Arrays.copyOfRange(
       stackTrace,
       3,
       stackTrace.length
     )));
-    return fut;
+    return promise.future();
   }
 
   /**

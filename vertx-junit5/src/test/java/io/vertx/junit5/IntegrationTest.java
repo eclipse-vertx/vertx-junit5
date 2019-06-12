@@ -17,7 +17,7 @@
 package io.vertx.junit5;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.codec.BodyCodec;
@@ -38,7 +38,7 @@ class IntegrationTest {
   static class HttpServerVerticle extends AbstractVerticle {
 
     @Override
-    public void start(Future<Void> startFuture) throws Exception {
+    public void start(Promise<Void> startFuture) throws Exception {
       vertx.createHttpServer()
         .requestHandler(request -> request.response().end("Plop"))
         .listen(8080, ar -> {

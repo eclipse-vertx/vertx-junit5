@@ -16,7 +16,7 @@
 
 package examples;
 
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -67,7 +67,7 @@ class RxJava2Test {
   class ServerVerticle extends AbstractVerticle {
 
     @Override
-    public void start(Future<Void> startFuture) throws Exception {
+    public void start(Promise<Void> startFuture) throws Exception {
       vertx.createHttpServer()
         .requestHandler(req -> {
           System.out.println(req.method() + " " + req.uri() + " from " + req.remoteAddress().host());

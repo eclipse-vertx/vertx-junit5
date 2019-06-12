@@ -19,6 +19,7 @@ package io.vertx.junit5;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -244,17 +245,17 @@ public final class VertxTestContext {
    * @return a future with completion result
    */
   public <T> Future<T> assertComplete(Future<T> fut) {
-    Future<T> newFut = Future.future();
+    Promise<T> newPromise = Promise.promise();
     fut.setHandler(ar -> {
       if (ar.succeeded()) {
-        newFut.complete(ar.result());
+        newPromise.complete(ar.result());
       } else {
         Throwable ex = new AssertionError("Future failed with exception: " + ar.cause().getMessage(), ar.cause());
         this.failNow(ex);
-        newFut.fail(ex);
+        newPromise.fail(ex);
       }
     });
-    return newFut;
+    return newPromise.future();
   }
 
   /**
@@ -266,17 +267,17 @@ public final class VertxTestContext {
    * @return a future with failure result
    */
   public <T> Future<T> assertFailure(Future<T> fut) {
-    Future<T> newFut = Future.future();
+    Promise<T> newPromise = Promise.promise();
     fut.setHandler(ar -> {
       if (ar.succeeded()) {
         Throwable ex = new AssertionError("Future completed with value: " + ar.result());
         this.failNow(ex);
-        newFut.fail(ex);
+        newPromise.fail(ex);
       } else {
-        newFut.fail(ar.cause());
+        newPromise.fail(ar.cause());
       }
     });
-    return newFut;
+    return newPromise.future();
   }
 
   // ........................................................................................... //

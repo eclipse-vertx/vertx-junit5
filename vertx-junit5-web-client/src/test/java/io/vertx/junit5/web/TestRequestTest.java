@@ -16,6 +16,7 @@
 package io.vertx.junit5.web;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
@@ -109,9 +110,9 @@ public class TestRequestTest {
   }
 
   private Future<HttpServer> startHttpServer(Vertx vertx, Consumer<HttpServerRequest> requestHandler) {
-    Future<HttpServer> fut = Future.future();
-    vertx.createHttpServer().requestHandler(requestHandler::accept).listen(9000, fut);
-    return fut;
+    Promise<HttpServer> promise = Promise.promise();
+    vertx.createHttpServer().requestHandler(requestHandler::accept).listen(9000, promise);
+    return promise.future();
   }
 
 }

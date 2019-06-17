@@ -43,7 +43,7 @@ class RxJava2Test {
   void check_deployment_and_message_send(Vertx vertx, VertxTestContext testContext) {
     RxHelper
       .deployVerticle(vertx, new RxVerticle())
-      .flatMap(id -> vertx.eventBus().rxSend("check", "Ok?"))
+      .flatMap(id -> vertx.eventBus().rxRequest("check", "Ok?"))
       .subscribe(
         message -> testContext.verify(() -> {
           assertThat(message.body()).isEqualTo("Check!");

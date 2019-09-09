@@ -179,7 +179,11 @@ public final class VertxTestContext {
     Objects.requireNonNull(nextHandler, "The handler cannot be null");
     return ar -> {
       if (ar.succeeded()) {
-        nextHandler.handle(ar.result());
+        try {
+          nextHandler.handle(ar.result());
+        } catch (Throwable t) {
+          failNow(t);
+        }
       } else {
         failNow(ar.cause());
       }
@@ -213,7 +217,11 @@ public final class VertxTestContext {
       if (ar.succeeded()) {
         failNow(new AssertionError("The asynchronous result was expected to have failed"));
       } else {
-        nextHandler.handle(ar.cause());
+        try {
+          nextHandler.handle(ar.cause());
+        } catch (Throwable t) {
+          failNow(t);
+        }
       }
     };
   }

@@ -30,13 +30,13 @@
   </parent>
 
   <artifactId>vertx-junit5-parent</artifactId>
-  <version>3.8.4-SNAPSHOT</version>
+  <version>3.8.4</version>
 
   <name>Vert.x JUnit 5 support :: Parent</name>
 
   <properties>
     <doc.skip>true</doc.skip>
-    <stack.version>3.8.4-SNAPSHOT</stack.version>
+    <stack.version>3.8.4</stack.version>
     <junit-jupiter.version>5.5.2</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
     <assertj-core.version>3.14.0</assertj-core.version>

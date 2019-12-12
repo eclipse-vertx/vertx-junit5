@@ -40,8 +40,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This class is a wrapper around {@link WebClient} that simplifies the creation of Http requests and the asserts on responses.
@@ -361,7 +360,9 @@ public class TestRequest {
 
   public static Consumer<HttpResponse<Buffer>> jsonBodyResponse(Object expected) {
     return res -> {
-      assertEquals("application/json", res.getHeader("content-type"));
+      String ctHeader = res.getHeader("content-type");
+      assertNotNull(ctHeader, "Content-type must not be null");
+      assertTrue(ctHeader.contains("application/json"), "Expected application/json Content-type, Actual: " + ctHeader);
       Object json = Json.decodeValue(res.bodyAsBuffer());
       assertEquals(expected, json);
     };

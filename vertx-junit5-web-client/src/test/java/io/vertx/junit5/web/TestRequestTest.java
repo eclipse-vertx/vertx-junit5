@@ -59,7 +59,7 @@ public class TestRequestTest {
       req.response()
         .setStatusCode(200)
         .setStatusMessage("Ciao!")
-      .putHeader("content-type", "application/json");
+      .putHeader("content-type", "application/json; charset=utf-8");
       req.bodyHandler(buf -> req.response().end(buf));
     }).setHandler(testContext.succeeding(h -> {
         testRequest(client, HttpMethod.GET, "/path")

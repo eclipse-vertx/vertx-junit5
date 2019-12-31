@@ -22,9 +22,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * A test context to wait on the outcomes of asynchronous operations.
@@ -48,7 +50,7 @@ public final class VertxTestContext {
 
   private Throwable throwableReference = null;
   private final CountDownLatch releaseLatch = new CountDownLatch(1);
-  private final HashSet<Checkpoint> checkpoints = new HashSet<>();
+  private final HashSet<CountingCheckpoint> checkpoints = new HashSet<>();
 
   // ........................................................................................... //
 
@@ -77,6 +79,19 @@ public final class VertxTestContext {
    */
   public synchronized boolean completed() {
     return !failed() && releaseLatch.getCount() == 0;
+  }
+
+  /**
+   * Gives the call sites of all unsatisifed checkpoints.
+   *
+   * @return a list of {@link StackTraceElement} references pointing to the unsatisfied checkpoint call sites.
+   */
+  public List<StackTraceElement> unsatisfiedCheckpointCallSites() {
+    return checkpoints
+      .stream()
+      .filter(checkpoint -> !checkpoint.satisfied())
+      .map(CountingCheckpoint::creationCallSite)
+      .collect(Collectors.toList());
   }
 
   // ........................................................................................... //

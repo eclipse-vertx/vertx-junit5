@@ -29,6 +29,7 @@ final class CountingCheckpoint implements Checkpoint {
   private final Consumer<Checkpoint> satisfactionTrigger;
   private final Consumer<Throwable> overuseTrigger;
   private final int requiredNumberOfPasses;
+  private final StackTraceElement creationCallSite;
 
   private int numberOfPasses = 0;
   private boolean satisfied = false;
@@ -47,9 +48,20 @@ final class CountingCheckpoint implements Checkpoint {
     if (requiredNumberOfPasses <= 0) {
       throw new IllegalArgumentException("A checkpoint needs at least 1 pass");
     }
+    this.creationCallSite = findCallSite();
     this.satisfactionTrigger = satisfactionTrigger;
     this.overuseTrigger = overuseTrigger;
     this.requiredNumberOfPasses = requiredNumberOfPasses;
+  }
+
+  private StackTraceElement findCallSite() {
+    StackTraceElement[] stackTrace = new Exception().getStackTrace();
+    for (int i = stackTrace.length - 1; i >= 0; i--) {
+      if (stackTrace[i].getClassName().equals(VertxTestContext.class.getName())) {
+        return stackTrace[i + 1];
+      }
+    }
+    throw new IllegalStateException();
   }
 
   @Override
@@ -76,5 +88,9 @@ final class CountingCheckpoint implements Checkpoint {
 
   public boolean satisfied() {
     return this.satisfied;
+  }
+
+  public StackTraceElement creationCallSite() {
+    return creationCallSite;
   }
 }

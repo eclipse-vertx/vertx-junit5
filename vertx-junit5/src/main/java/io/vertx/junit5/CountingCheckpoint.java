@@ -61,7 +61,7 @@ final class CountingCheckpoint implements Checkpoint {
         return stackTrace[i + 1];
       }
     }
-    throw new IllegalStateException();
+    return stackTrace[1]; // This can only happen from direct usage of CountingCheckpoint in tests, so the value is irrelevant
   }
 
   @Override

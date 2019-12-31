@@ -73,4 +73,8 @@ final class CountingCheckpoint implements Checkpoint {
       overuseTrigger.accept(new IllegalStateException("Strict checkpoint flagged too many times"));
     }
   }
+
+  public boolean satisfied() {
+    return this.satisfied;
+  }
 }

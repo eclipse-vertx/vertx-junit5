@@ -46,14 +46,17 @@ class CountingCheckpointTest {
     checkpoint.flag();
     assertThat(success).isFalse();
     assertThat(witness).hasValue(null);
+    assertThat(checkpoint.satisfied()).isFalse();
 
     checkpoint.flag();
     assertThat(success).isFalse();
     assertThat(witness).hasValue(null);
+    assertThat(checkpoint.satisfied()).isFalse();
 
     checkpoint.flag();
     assertThat(success).isTrue();
     assertThat(witness).hasValue(checkpoint);
+    assertThat(checkpoint.satisfied()).isTrue();
   }
 
   private static final Consumer<Checkpoint> NOOP = c -> {
@@ -93,12 +96,16 @@ class CountingCheckpointTest {
     AtomicReference<Throwable> box = new AtomicReference<>();
     CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(NOOP, box::set, 1);
 
+    assertThat(checkpoint.satisfied()).isFalse();
     checkpoint.flag();
     assertThat(box).hasValue(null);
+    assertThat(checkpoint.satisfied()).isTrue();
+
     checkpoint.flag();
     assertThat(box.get())
       .isNotNull()
       .isInstanceOf(IllegalStateException.class)
       .hasMessage("Strict checkpoint flagged too many times");
+    assertThat(checkpoint.satisfied()).isTrue();
   }
 }

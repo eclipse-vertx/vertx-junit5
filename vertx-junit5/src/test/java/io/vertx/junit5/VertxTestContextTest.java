@@ -393,7 +393,7 @@ class VertxTestContextTest {
     b.flag();
     assertThat(context.unsatisfiedCheckpointCallSites()).hasSize(1);
 
-    StackTraceElement element = context.unsatisfiedCheckpointCallSites().get(0);
+    StackTraceElement element = context.unsatisfiedCheckpointCallSites().iterator().next();
     assertThat(element.getClassName()).isEqualTo(VertxTestContextTest.class.getName());
     assertThat(element.getMethodName()).isEqualTo("check_unsatisifed_checkpoint_callsites");
 

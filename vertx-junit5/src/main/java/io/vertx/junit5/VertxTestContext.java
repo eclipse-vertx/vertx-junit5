@@ -22,8 +22,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -82,16 +82,16 @@ public final class VertxTestContext {
   }
 
   /**
-   * Gives the call sites of all unsatisifed checkpoints.
+   * Gives the call sites of all unsatisfied checkpoints.
    *
-   * @return a list of {@link StackTraceElement} references pointing to the unsatisfied checkpoint call sites.
+   * @return a set of {@link StackTraceElement} references pointing to the unsatisfied checkpoint call sites.
    */
-  public List<StackTraceElement> unsatisfiedCheckpointCallSites() {
+  public Set<StackTraceElement> unsatisfiedCheckpointCallSites() {
     return checkpoints
       .stream()
       .filter(checkpoint -> !checkpoint.satisfied())
       .map(CountingCheckpoint::creationCallSite)
-      .collect(Collectors.toList());
+      .collect(Collectors.toSet());
   }
 
   // ........................................................................................... //

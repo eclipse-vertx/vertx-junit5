@@ -28,6 +28,7 @@ import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -186,6 +187,38 @@ class VertxExtensionTest {
           f.complete(69);
         }, testContext.succeeding(i -> testContext.verify(() -> assertEquals(58, i))));
       }
+    }
+
+    @Nested
+    @ExtendWith(VertxExtension.class)
+    @DisplayName("🚫")
+    class TimingOut {
+
+      @Test
+      @Tag("programmatic")
+      @Timeout(value = 2, timeUnit = TimeUnit.SECONDS)
+      void doNothing(VertxTestContext testContext) {
+        testContext.checkpoint();
+      }
+    }
+
+    @Test
+    @DisplayName("⚙️ Check a timeout diagnosis")
+    void checkTimeoutFailureTestWithIntermediateAsyncVerifier() {
+      LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        .selectors(selectClass(EmbeddedWithARunner.TimingOut.class))
+        .build();
+      Launcher launcher = LauncherFactory.create();
+      SummaryGeneratingListener listener = new SummaryGeneratingListener();
+      launcher.registerTestExecutionListeners(listener);
+      launcher.execute(request);
+      TestExecutionSummary summary = listener.getSummary();
+      assertThat(summary.getTestsStartedCount()).isEqualTo(1);
+      assertThat(summary.getTestsFailedCount()).isEqualTo(1);
+      Throwable exception = summary.getFailures().get(0).getException();
+      assertThat(exception)
+        .isInstanceOf(TimeoutException.class)
+        .hasMessageContaining("checkpoint in file VertxExtensionTest.java");
     }
   }
 

@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
 
@@ -227,9 +228,15 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
             }
           }
         } else {
-          throw new TimeoutException("The test execution timed out. Make sure your asynchronous code "
+          String message = "The test execution timed out. Make sure your asynchronous code "
             + "includes calls to either VertxTestContext#completeNow(), VertxTestContext#failNow() "
-            + "or Checkpoint#flag()");
+            + "or Checkpoint#flag()";
+          String unsatisfiedCheckpointsDiagnosis = context.unsatisfiedCheckpointCallSites()
+            .stream()
+            .map(element -> "-> checkpoint in file " + element.getFileName() + " line " + element.getLineNumber())
+            .collect(Collectors.joining("\n"));
+          message = message + "\n\nUnsatisfied checkpoints diagnostics:\n" + unsatisfiedCheckpointsDiagnosis;
+          throw new TimeoutException(message);
         }
       }
     }

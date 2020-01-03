@@ -379,4 +379,25 @@ class VertxTestContextTest {
       .hasMessage("!")
       .isInstanceOf(RuntimeException.class);
   }
+
+  @Test
+  @DisplayName("Check that unsatisfied call sites are properly identified")
+  void check_unsatisifed_checkpoint_callsites() {
+    VertxTestContext context = new VertxTestContext();
+    Checkpoint a = context.checkpoint();
+    Checkpoint b = context.checkpoint(2);
+
+    assertThat(context.unsatisfiedCheckpointCallSites()).hasSize(2);
+
+    a.flag();
+    b.flag();
+    assertThat(context.unsatisfiedCheckpointCallSites()).hasSize(1);
+
+    StackTraceElement element = context.unsatisfiedCheckpointCallSites().iterator().next();
+    assertThat(element.getClassName()).isEqualTo(VertxTestContextTest.class.getName());
+    assertThat(element.getMethodName()).isEqualTo("check_unsatisifed_checkpoint_callsites");
+
+    b.flag();
+    assertThat(context.unsatisfiedCheckpointCallSites()).isEmpty();
+  }
 }

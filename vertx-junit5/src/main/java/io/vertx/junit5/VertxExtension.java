@@ -18,9 +18,6 @@ package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
-import io.vertx.core.spi.launcher.ExecutionContext;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -34,12 +31,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
 
 /**
  * JUnit 5 Vert.x extension that allows parameter injection as well as an automatic lifecycle on the {@link VertxTestContext} instance.
@@ -75,10 +69,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
      * There may be concurrent test contexts to join at a point of time because it is allowed to have several
      * user-defined lifecycle event handles (e.g., @BeforeEach, etc).
      */
-  }
-
-  private enum CreationScope {
-    BEFORE_ALL, BEFORE_EACH, TEST
   }
 
   private static final HashSet<Class> INJECTABLE_TYPES = new HashSet<Class>() {
@@ -125,9 +115,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
         return unpack(parentStore.get(instanceKey));
       }
     }
-    if (store.get(phaseCreatorKey) == null) {
-      store.put(phaseCreatorKey, scopeFor(declaringExecutable));
-    }
     return unpack(store.getOrComputeIfAbsent(instanceKey, creatorFunction));
   }
 
@@ -148,15 +135,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     VertxTestContext newTestContext = new VertxTestContext();
     contexts.add(newTestContext);
     return newTestContext;
-  }
-
-  private static CreationScope scopeFor(Executable injectionTarget) {
-    if (isAnnotated(injectionTarget, BeforeAll.class)) {
-      return CreationScope.BEFORE_ALL;
-    } else if (isAnnotated(injectionTarget, BeforeEach.class)) {
-      return CreationScope.BEFORE_EACH;
-    }
-    return CreationScope.TEST;
   }
 
   private static Store store(ExtensionContext extensionContext) {
@@ -251,7 +229,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     void accept(T obj) throws Exception;
   }
 
-  private static class ScopedObject <T> implements Supplier<T>, ExtensionContext.Store.CloseableResource {
+  private static class ScopedObject<T> implements Supplier<T>, ExtensionContext.Store.CloseableResource {
 
     private final Supplier<T> supplier;
     private T object;

@@ -52,15 +52,9 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   private static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
   private static final String TEST_CONTEXT_KEY = "VertxTestContext";
-
   private static final String VERTX_INSTANCE_KEY = "VertxInstance";
-  private static final String VERTX_INSTANCE_CREATOR_KEY = "VertxInstanceCreator";
-
   private static final String VERTX_RX1_INSTANCE_KEY = "VertxRx1Instance";
-  private static final String VERTX_RX1_INSTANCE_CREATOR_KEY = "VertxRx1InstanceCreator";
-
   private static final String VERTX_RX2_INSTANCE_KEY = "VertxRx2Instance";
-  private static final String VERTX_RX2_INSTANCE_CREATOR_KEY = "VertxRx2InstanceCreator";
 
   private static class ContextList extends ArrayList<VertxTestContext> {
     /*
@@ -68,15 +62,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
      * user-defined lifecycle event handles (e.g., @BeforeEach, etc).
      */
   }
-
-  private static final HashSet<Class> INJECTABLE_TYPES = new HashSet<Class>() {
-    {
-      add(Vertx.class);
-      add(VertxTestContext.class);
-      add(io.vertx.rxjava.core.Vertx.class);
-      add(io.vertx.reactivex.core.Vertx.class);
-    }
-  };
 
   private final HashMap<Class<?>, VertxExtensionParameterProvider<?>> parameterProviders = new HashMap<>();
 
@@ -113,7 +98,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
 
-  private static Object getOrCreateScopedObject(Executable declaringExecutable, ExtensionContext extensionContext, String instanceKey, String phaseCreatorKey, Function<String, Object> creatorFunction) {
+  private static Object getOrCreateScopedObject(Executable declaringExecutable, ExtensionContext extensionContext, String instanceKey, Function<String, Object> creatorFunction) {
     Store store = store(extensionContext);
     if (extensionContext.getParent().isPresent()) {
       Store parentStore = store(extensionContext.getParent().get());
@@ -125,14 +110,10 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   }
 
   private static Object unpack(Object object) {
-    if (object instanceof Supplier) {
-      return ((Supplier) object).get();
+    if (object instanceof Supplier<?>) {
+      return ((Supplier<?>) object).get();
     }
     return object;
-  }
-
-  private void putScopedObject(ExtensionContext extensionContext, String instanceKey, Function<String, Object> creatorObject) {
-    store(extensionContext).getOrComputeIfAbsent(instanceKey, creatorObject);
   }
 
   private VertxTestContext newTestContext(ExtensionContext extensionContext) {
@@ -248,13 +229,16 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
 
     @Override
     public void close() throws Throwable {
-      if (object != null)
+      if (object != null) {
         cleaner.accept(object);
+      }
     }
 
     @Override
     public T get() {
-      if (object == null) this.object = supplier.get();
+      if (object == null) {
+        this.object = supplier.get();
+      }
       return object;
     }
   }
@@ -336,7 +320,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
       declaringExecutable,
       context,
       VERTX_INSTANCE_KEY,
-      VERTX_INSTANCE_CREATOR_KEY,
       key -> new ScopedObject<>(Vertx::vertx, closeRegularVertx()));
   }
 
@@ -345,7 +328,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
       declaringExecutable,
       context,
       VERTX_RX1_INSTANCE_KEY,
-      VERTX_RX1_INSTANCE_CREATOR_KEY,
       key -> new ScopedObject<>(io.vertx.rxjava.core.Vertx::vertx, closeRx1Vertx()));
   }
 
@@ -354,7 +336,6 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
       declaringExecutable,
       context,
       VERTX_RX2_INSTANCE_KEY,
-      VERTX_RX2_INSTANCE_CREATOR_KEY,
       key -> new ScopedObject<>(io.vertx.reactivex.core.Vertx::vertx, closeRx2Vertx()));
   }
 }

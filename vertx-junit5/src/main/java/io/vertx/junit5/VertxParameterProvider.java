@@ -17,8 +17,16 @@
 package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_DURATION;
+import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_UNIT;
 
 public class VertxParameterProvider implements VertxExtensionParameterProvider<Vertx> {
 
@@ -34,6 +42,31 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
 
   @Override
   public Vertx newInstance(ExtensionContext extensionContext, ParameterContext parameterContext) {
-    throw new UnsupportedOperationException("TBA");
+    return Vertx.vertx();
+  }
+
+  @Override
+  public ParameterClosingConsumer<Vertx> parameterClosingConsumer() {
+    return vertx -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      AtomicReference<Throwable> errorBox = new AtomicReference<>();
+      vertx.close(ar -> {
+        if (ar.failed()) {
+          errorBox.set(ar.cause());
+        }
+        latch.countDown();
+      });
+      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
+        throw new TimeoutException("Closing the Vertx context timed out");
+      }
+      Throwable throwable = errorBox.get();
+      if (throwable != null) {
+        if (throwable instanceof Exception) {
+          throw (Exception) throwable;
+        } else {
+          throw new VertxException(throwable);
+        }
+      }
+    };
   }
 }

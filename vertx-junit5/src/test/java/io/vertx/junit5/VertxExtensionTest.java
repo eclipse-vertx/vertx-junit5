@@ -31,9 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 /**
@@ -66,6 +64,20 @@ class VertxExtensionTest {
       assertNotNull(vertx);
       assertNotNull(context);
       context.completeNow();
+    }
+
+    @Test
+    @DisplayName("Inject 2 Vertx instances and check they are the same")
+    void gimme_2_vertx(Vertx vertx1, Vertx vertx2) {
+      assertSame(vertx1, vertx2);
+    }
+
+    @Test
+    @DisplayName("Inject 2 VertxTestContext instances and check they are different")
+    void gimme_2_vertx(VertxTestContext context1, VertxTestContext context2) {
+      assertNotSame(context1, context2);
+      context1.completeNow();
+      context2.completeNow();
     }
   }
 

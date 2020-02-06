@@ -28,11 +28,23 @@ public class VertxTestContextParameterProvider implements VertxExtensionParamete
 
   @Override
   public String key() {
-    return "VertxTestContext";
+    doNotCallMe();
+    return null;
   }
 
   @Override
   public VertxTestContext newInstance(ExtensionContext extensionContext, ParameterContext parameterContext) {
-    throw new UnsupportedOperationException("TBA");
+    doNotCallMe();
+    return null;
+  }
+
+  @Override
+  public ParameterClosingConsumer<VertxTestContext> parameterClosingConsumer() {
+    doNotCallMe();
+    return null;
+  }
+
+  private ParameterClosingConsumer<VertxTestContext> doNotCallMe() {
+    throw new UnsupportedOperationException("VertxTestContext is a built-in special case");
   }
 }

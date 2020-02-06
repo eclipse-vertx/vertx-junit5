@@ -17,15 +17,28 @@
 package io.vertx.junit5;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
 
-public interface VertxExtensionParameterProvider<T> {
+import java.util.Objects;
+import java.util.function.Supplier;
 
-  Class<T> type();
+public class ScopedObject<T> implements Supplier<T>, ExtensionContext.Store.CloseableResource {
 
-  String key();
+  private T object;
+  private final ParameterClosingConsumer<T> cleaner;
 
-  T newInstance(ExtensionContext extensionContext, ParameterContext parameterContext);
+  ScopedObject(T object, ParameterClosingConsumer<T> cleaner) {
+    Objects.requireNonNull(object, "The object cannot be null");
+    this.object = object;
+    this.cleaner = cleaner;
+  }
 
-  ParameterClosingConsumer<T> parameterClosingConsumer();
+  @Override
+  public void close() throws Throwable {
+    cleaner.accept(object);
+  }
+
+  @Override
+  public T get() {
+    return object;
+  }
 }

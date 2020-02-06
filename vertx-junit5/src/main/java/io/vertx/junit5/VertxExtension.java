@@ -24,9 +24,7 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -80,9 +78,19 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     }
   };
 
+  private final HashSet<Class<?>> injectableTypes = new HashSet<>();
+  private final HashMap<Class<?>, VertxExtensionParameterProvider<?>> parameterProviders = new HashMap<>();
+
+  public VertxExtension() {
+    for (VertxExtensionParameterProvider<?> parameterProvider : ServiceLoader.load(VertxExtensionParameterProvider.class)) {
+      injectableTypes.add(parameterProvider.type());
+      parameterProviders.put(parameterProvider.type(), parameterProvider);
+    }
+  }
+
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    return INJECTABLE_TYPES.contains(parameterType(parameterContext));
+    return injectableTypes.contains(parameterType(parameterContext));
   }
 
   private Class<?> parameterType(ParameterContext parameterContext) {

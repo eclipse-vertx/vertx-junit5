@@ -21,12 +21,13 @@ import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 
-import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -49,11 +50,8 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   public static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
   private static final String TEST_CONTEXT_KEY = "VertxTestContext";
-  private static final String VERTX_INSTANCE_KEY = "VertxInstance";
-  private static final String VERTX_RX1_INSTANCE_KEY = "VertxRx1Instance";
-  private static final String VERTX_RX2_INSTANCE_KEY = "VertxRx2Instance";
 
-  public static class ContextList extends ArrayList<VertxTestContext> {
+  private static class ContextList extends ArrayList<VertxTestContext> {
     /*
      * There may be concurrent test contexts to join at a point of time because it is allowed to have several
      * user-defined lifecycle event handles (e.g., @BeforeEach, etc).
@@ -97,32 +95,7 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     return unpack(store.getOrComputeIfAbsent(parameterProvider.key(), key -> new ScopedObject(
       parameterProvider.newInstance(extensionContext, parameterContext),
       parameterProvider.parameterClosingConsumer())));
-
-//    if (type == Vertx.class) {
-//      return retrieveVertx(parameterContext.getDeclaringExecutable(), extensionContext);
-//    }
-//    if (type == io.vertx.rxjava.core.Vertx.class) {
-//      return retrieveRxJava1Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
-//    }
-//    if (type == io.vertx.reactivex.core.Vertx.class) {
-//      return retrieveRxJava2Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
-//    }
-//    if (type == VertxTestContext.class) {
-//      return newTestContext(extensionContext);
-//    }
-//    throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
-
-//  private static Object getOrCreateScopedObject(Executable declaringExecutable, ExtensionContext extensionContext, String instanceKey, Function<String, Object> creatorFunction) {
-//    Store store = store(extensionContext);
-//    if (extensionContext.getParent().isPresent()) {
-//      Store parentStore = store(extensionContext.getParent().get());
-//      if (parentStore.get(instanceKey) != null) {
-//        return unpack(parentStore.get(instanceKey));
-//      }
-//    }
-//    return unpack(store.getOrComputeIfAbsent(instanceKey, creatorFunction));
-//  }
 
   private static Object unpack(Object object) {
     if (object instanceof Supplier<?>) {
@@ -225,100 +198,4 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
       joinActiveTestContexts(extensionContext.getParent().get());
     }
   }
-
-//  private static ParameterClosingConsumer<Vertx> closeRegularVertx() {
-//    return vertx -> {
-//      CountDownLatch latch = new CountDownLatch(1);
-//      AtomicReference<Throwable> errorBox = new AtomicReference<>();
-//      vertx.close(ar -> {
-//        if (ar.failed()) {
-//          errorBox.set(ar.cause());
-//        }
-//        latch.countDown();
-//      });
-//      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
-//        throw new TimeoutException("Closing the Vertx context timed out");
-//      }
-//      Throwable throwable = errorBox.get();
-//      if (throwable != null) {
-//        if (throwable instanceof Exception) {
-//          throw (Exception) throwable;
-//        } else {
-//          throw new VertxException(throwable);
-//        }
-//      }
-//    };
-//  }
-//
-//  private static ParameterClosingConsumer<io.vertx.rxjava.core.Vertx> closeRx1Vertx() {
-//    return vertx -> {
-//      CountDownLatch latch = new CountDownLatch(1);
-//      AtomicReference<Throwable> errorBox = new AtomicReference<>();
-//      vertx.close(ar -> {
-//        if (ar.failed()) {
-//          errorBox.set(ar.cause());
-//        }
-//        latch.countDown();
-//      });
-//      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
-//        throw new TimeoutException("Closing the Vertx context timed out");
-//      }
-//      Throwable throwable = errorBox.get();
-//      if (throwable != null) {
-//        if (throwable instanceof Exception) {
-//          throw (Exception) throwable;
-//        } else {
-//          throw new VertxException(throwable);
-//        }
-//      }
-//    };
-//  }
-//
-//  private static ParameterClosingConsumer<io.vertx.reactivex.core.Vertx> closeRx2Vertx() {
-//    return vertx -> {
-//      CountDownLatch latch = new CountDownLatch(1);
-//      AtomicReference<Throwable> errorBox = new AtomicReference<>();
-//      vertx.close(ar -> {
-//        if (ar.failed()) {
-//          errorBox.set(ar.cause());
-//        }
-//        latch.countDown();
-//      });
-//      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
-//        throw new TimeoutException("Closing the Vertx context timed out");
-//      }
-//      Throwable throwable = errorBox.get();
-//      if (throwable != null) {
-//        if (throwable instanceof Exception) {
-//          throw (Exception) throwable;
-//        } else {
-//          throw new VertxException(throwable);
-//        }
-//      }
-//    };
-//  }
-
-//  public static Vertx retrieveVertx(Executable declaringExecutable, ExtensionContext context) {
-//    return (Vertx) getOrCreateScopedObject(
-//      declaringExecutable,
-//      context,
-//      VERTX_INSTANCE_KEY,
-//      key -> new ScopedObject<>(Vertx::vertx, closeRegularVertx()));
-//  }
-//
-//  public static io.vertx.rxjava.core.Vertx retrieveRxJava1Vertx(Executable declaringExecutable, ExtensionContext context) {
-//    return (io.vertx.rxjava.core.Vertx) getOrCreateScopedObject(
-//      declaringExecutable,
-//      context,
-//      VERTX_RX1_INSTANCE_KEY,
-//      key -> new ScopedObject<>(io.vertx.rxjava.core.Vertx::vertx, closeRx1Vertx()));
-//  }
-//
-//  public static io.vertx.reactivex.core.Vertx retrieveRxJava2Vertx(Executable declaringExecutable, ExtensionContext context) {
-//    return (io.vertx.reactivex.core.Vertx) getOrCreateScopedObject(
-//      declaringExecutable,
-//      context,
-//      VERTX_RX2_INSTANCE_KEY,
-//      key -> new ScopedObject<>(io.vertx.reactivex.core.Vertx::vertx, closeRx2Vertx()));
-//  }
 }

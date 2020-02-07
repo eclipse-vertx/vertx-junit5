@@ -15,6 +15,7 @@
  */
 package io.vertx.junit5.web;
 
+import io.vertx.core.Vertx;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -27,39 +28,39 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author <a href="https://slinkydeveloper.com/">Francesco Guardiani</a>
  */
 @DisplayName("Test the injection of web client with default options")
-@ExtendWith({VertxExtension.class, VertxWebClientExtension.class})
+@ExtendWith(VertxExtension.class)
 class WebClientExtensionCompleteLifecycleInjectionTest {
 
   @BeforeAll
-  static void inTheBeginning(WebClient client, VertxTestContext testContext) {
+  static void inTheBeginning(Vertx vertx, VertxTestContext testContext, WebClient client) {
     assertThat(client).isNotNull();
     assertThat(testContext).isNotNull();
     testContext.completeNow();
   }
 
   @BeforeEach
-  void rightBefore(WebClient client, VertxTestContext testContext) {
+  void rightBefore(VertxTestContext testContext, WebClient client) {
     assertThat(client).isNotNull();
     assertThat(testContext).isNotNull();
     testContext.completeNow();
   }
 
   @Test
-  void test(WebClient client, VertxTestContext testContext) {
+  void test(VertxTestContext testContext, WebClient client) {
     assertThat(client).isNotNull();
     assertThat(testContext).isNotNull();
     testContext.completeNow();
   }
 
   @AfterEach
-  void rightAfter(WebClient client, VertxTestContext testContext) {
+  void rightAfter(VertxTestContext testContext, WebClient client) {
     assertThat(client).isNotNull();
     assertThat(testContext).isNotNull();
     testContext.completeNow();
   }
 
   @AfterAll
-  static void inTheEnd(WebClient client, VertxTestContext testContext) {
+  static void inTheEnd(VertxTestContext testContext, WebClient client) {
     assertThat(client).isNotNull();
     assertThat(testContext).isNotNull();
     testContext.completeNow();

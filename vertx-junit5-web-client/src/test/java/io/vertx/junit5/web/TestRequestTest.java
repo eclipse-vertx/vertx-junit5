@@ -36,14 +36,14 @@ import java.util.function.Consumer;
 import static io.vertx.junit5.web.TestRequest.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith({VertxExtension.class, VertxWebClientExtension.class})
+@ExtendWith(VertxExtension.class)
 public class TestRequestTest {
 
   @WebClientOptionsInject
   public WebClientOptions options = new WebClientOptions().setDefaultHost("localhost").setDefaultPort(9000);
 
   @Test
-  public void testSimpleSend(WebClient client, Vertx vertx, VertxTestContext testContext) {
+  public void testSimpleSend(Vertx vertx, VertxTestContext testContext, WebClient client) {
     startHttpServer(vertx, req -> req.response().setStatusCode(200).setStatusMessage("Ciao!").end())
       .onComplete(testContext.succeeding(h -> {
         testRequest(client, HttpMethod.GET, "/path")
@@ -53,7 +53,7 @@ public class TestRequestTest {
   }
 
   @Test
-  public void testJsonAssert(WebClient client, Vertx vertx, VertxTestContext testContext) {
+  public void testJsonAssert(Vertx vertx, VertxTestContext testContext, WebClient client) {
     JsonObject jo = new JsonObject().put("name", "Francesco");
     startHttpServer(vertx, req -> {
       req.response()
@@ -69,7 +69,7 @@ public class TestRequestTest {
   }
 
   @Test
-  public void testHeaders(WebClient client, Vertx vertx, VertxTestContext testContext) {
+  public void testHeaders(Vertx vertx, VertxTestContext testContext, WebClient client) {
     startHttpServer(vertx, req ->
       req.response()
         .setStatusCode(200)
@@ -86,7 +86,7 @@ public class TestRequestTest {
   }
 
   @Test
-  public void testFailing(WebClient client, Vertx vertx) throws InterruptedException {
+  public void testFailing(Vertx vertx, WebClient client) throws InterruptedException {
     VertxTestContext testContext = new VertxTestContext();
 
     startHttpServer(vertx, req ->

@@ -23,17 +23,14 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith({
-  VertxExtension.class,
-  VertxWebClientExtension.class
-})
+@ExtendWith(VertxExtension.class)
 public class WebClientCustomOptionInjection {
 
   @WebClientOptionsInject
   public WebClientOptions options = new WebClientOptions().setDefaultPort(9001).setDefaultHost("localhost");
 
   @Test
-  void test(Vertx vertx, WebClient client, VertxTestContext testContext) {
+  void test(Vertx vertx, VertxTestContext testContext, WebClient client) {
     vertx.createHttpServer().requestHandler(req -> {
       req.response().end();
       testContext.completeNow();

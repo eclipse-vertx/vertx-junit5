@@ -21,6 +21,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.junit5.ParameterClosingConsumer;
 import io.vertx.junit5.ScopedObject;
+import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxExtensionParameterProvider;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -47,7 +48,7 @@ public class WebClientParameterProvider implements VertxExtensionParameterProvid
   @Override
   public WebClient newInstance(ExtensionContext extensionContext, ParameterContext parameterContext) {
     ExtensionContext.Store store = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL);
-    ScopedObject scopedObject = store.get("Vertx", ScopedObject.class);
+    ScopedObject scopedObject = store.get(VertxExtension.VERTX_INSTANCE_KEY, ScopedObject.class);
     Objects.requireNonNull(scopedObject, "A Vertx instance must exist, try adding the Vertx parameter as the first method argument");
     Vertx vertx = (Vertx) scopedObject.get();
     WebClientOptions webClientOptions = getWebClientOptions(extensionContext).orElse(new WebClientOptions());

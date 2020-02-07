@@ -46,8 +46,20 @@ import java.util.stream.Collectors;
  */
 public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeEachCallback, AfterEachCallback, BeforeAllCallback, AfterAllCallback {
 
+  /**
+   * Default timeout.
+   */
   public static final int DEFAULT_TIMEOUT_DURATION = 30;
+
+  /**
+   * Default timeout unit.
+   */
   public static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
+
+  /**
+   * Key for all {@link Vertx} instances, including what shims like RxJava should use.
+   */
+  public static final String VERTX_INSTANCE_KEY = "Vertx";
 
   private static final String TEST_CONTEXT_KEY = "VertxTestContext";
 

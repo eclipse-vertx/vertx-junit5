@@ -37,7 +37,7 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
 
   @Override
   public String key() {
-    return "Vertx";
+    return VertxExtension.VERTX_INSTANCE_KEY;
   }
 
   @Override

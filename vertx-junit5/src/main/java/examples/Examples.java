@@ -18,8 +18,8 @@ package examples;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.codec.BodyCodec;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
@@ -72,14 +72,14 @@ public class Examples {
   }
 
   public void usingVerify(Vertx vertx, VertxTestContext testContext) {
-    WebClient client = WebClient.create(vertx);
+    HttpClient client = vertx.createHttpClient();
 
     client.get(8080, "localhost", "/")
-      .as(BodyCodec.string())
-      .send(testContext.succeeding(response -> testContext.verify(() -> {
-        assertThat(response.body()).isEqualTo("Plop");
+      .flatMap(HttpClientResponse::body)
+      .onSuccess(buffer -> testContext.verify(() -> {
+        assertThat(buffer.toString()).isEqualTo("Plop");
         testContext.completeNow();
-      })));
+      }));
   }
 
   public void checkpointing(Vertx vertx, VertxTestContext testContext) {
@@ -100,18 +100,12 @@ public class Examples {
         }
       });
 
-    WebClient client = WebClient.create(vertx);
+    HttpClient client = vertx.createHttpClient();
     for (int i = 0; i < 10; i++) {
       client.get(8080, "localhost", "/")
-        .as(BodyCodec.string())
-        .send(ar -> {
-          if (ar.failed()) {
-            testContext.failNow(ar.cause());
-          } else {
-            testContext.verify(() -> assertThat(ar.result().body()).isEqualTo("Ok"));
-            responsesReceived.flag();
-          }
-        });
+        .flatMap(HttpClientResponse::body)
+        .onSuccess(buffer -> testContext.verify(() -> assertThat(buffer.toString()).isEqualTo("Ok")))
+        .onFailure(testContext::failNow);
     }
   }
 
@@ -137,13 +131,13 @@ public class Examples {
 
       void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
         vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
-          WebClient client = WebClient.create(vertx);
+          HttpClient client = vertx.createHttpClient();
           client.get(8080, "localhost", "/")
-            .as(BodyCodec.string())
-            .send(testContext.succeeding(response -> testContext.verify(() -> {
-              assertThat(response.body()).isEqualTo("Plop");
+            .flatMap(HttpClientResponse::body)
+            .onSuccess(buffer -> testContext.verify(() -> {
+              assertThat(buffer.toString()).isEqualTo("Plop");
               testContext.completeNow();
-            })));
+            }));
         }));
       }
     }
@@ -163,13 +157,13 @@ public class Examples {
       // Repeat this test 3 times
       @RepeatedTest(3)
       void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
-        WebClient client = WebClient.create(vertx);
+        HttpClient client = vertx.createHttpClient();
         client.get(8080, "localhost", "/")
-          .as(BodyCodec.string())
-          .send(testContext.succeeding(response -> testContext.verify(() -> {
-            assertThat(response.body()).isEqualTo("Plop");
+          .flatMap(HttpClientResponse::body)
+          .onSuccess(buffer -> testContext.verify(() -> {
+            assertThat(buffer.toString()).isEqualTo("Plop");
             testContext.completeNow();
-          })));
+          }));
       }
     }
   }

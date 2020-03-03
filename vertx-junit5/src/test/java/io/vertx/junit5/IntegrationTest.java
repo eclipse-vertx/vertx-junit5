@@ -19,9 +19,11 @@ package io.vertx.junit5;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.codec.BodyCodec;
-import org.junit.jupiter.api.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientResponse;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.CountDownLatch;
@@ -76,13 +78,14 @@ class IntegrationTest {
       VertxTestContext testContext = new VertxTestContext();
 
       vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
-        WebClient client = WebClient.create(vertx);
+        HttpClient client = vertx.createHttpClient();
         client.get(8080, "localhost", "/")
-          .as(BodyCodec.string())
-          .send(testContext.succeeding(response -> testContext.verify(() -> {
-            assertThat(response.body()).isEqualTo("Plop");
+          .flatMap(HttpClientResponse::body)
+          .onFailure(testContext::failNow)
+          .onSuccess(buffer -> testContext.verify(() -> {
+            assertThat(buffer.toString()).isEqualTo("Plop");
             testContext.completeNow();
-          })));
+          }));
       }));
 
       assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue();
@@ -122,17 +125,14 @@ class IntegrationTest {
           }
         });
 
-      WebClient client = WebClient.create(vertx);
+      HttpClient client = vertx.createHttpClient();
       for (int i = 0; i < 10; i++) {
         client.get(8080, "localhost", "/")
-          .as(BodyCodec.string())
-          .send(ar -> {
-            if (ar.failed()) {
-              testContext.failNow(ar.cause());
-            } else {
-              testContext.verify(() -> assertThat(ar.result().body()).isEqualTo("Ok"));
-              responsesReceived.flag();
-            }
+          .flatMap(HttpClientResponse::body)
+          .onFailure(testContext::failNow)
+          .onSuccess(buffer -> {
+            testContext.verify(() -> assertThat(buffer.toString()).isEqualTo("Ok"));
+            responsesReceived.flag();
           });
       }
     }

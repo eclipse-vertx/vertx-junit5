@@ -21,6 +21,14 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+/**
+ * A parameter as an object with a scope and that can be closed when the scope exits.
+ * <p>
+ * This is useful for parameter providers.
+ *
+ * @param <T> Parameter type
+ * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ */
 public class ScopedObject<T> implements Supplier<T>, ExtensionContext.Store.CloseableResource {
 
   private T object;

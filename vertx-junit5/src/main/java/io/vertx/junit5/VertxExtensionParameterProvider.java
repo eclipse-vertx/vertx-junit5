@@ -19,13 +19,46 @@ package io.vertx.junit5;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 
+/**
+ * A {@link VertxExtension} test method parameter provider service provider interface.
+ * <p>
+ * You can register new providers by pointing to implementations in the
+ * {@code META-INF/services/io.vertx.junit5.VertxExtensionParameterProvider} resource.
+ *
+ * @param <T> Parameter type
+ * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ */
 public interface VertxExtensionParameterProvider<T> {
 
+  /**
+   * The parameter type.
+   *
+   * @return the parameter type
+   */
   Class<T> type();
 
+  /**
+   * A string to identify the parameter in an extension context.
+   * <p>
+   * In most cases it should be a constant.
+   *
+   * @return the identifier
+   */
   String key();
 
+  /**
+   * Provide a new parameter instance.
+   *
+   * @param extensionContext the extension context
+   * @param parameterContext the parameter context
+   * @return the new instance
+   */
   T newInstance(ExtensionContext extensionContext, ParameterContext parameterContext);
 
+  /**
+   * A consumer to close the resource.
+   *
+   * @return the consumer
+   */
   ParameterClosingConsumer<T> parameterClosingConsumer();
 }

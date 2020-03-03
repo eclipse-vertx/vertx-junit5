@@ -16,6 +16,14 @@
 
 package io.vertx.junit5;
 
+/**
+ * A consumer to close extension parameters, like closing a Vert.x context, a web client, etc.
+ * <p>
+ * This is useful for parameter providers.
+ *
+ * @param <T> Parameter type
+ * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ */
 @FunctionalInterface
 public interface ParameterClosingConsumer<T> {
   void accept(T obj) throws Exception;

@@ -19,6 +19,14 @@ package io.vertx.junit5;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 
+/**
+ * Vert.x test context parameter provider holder class.
+ * <p>
+ * The implementation does not do anything since that type is a built-in special case, but we need it for the injection
+ * mechanism to operate.
+ *
+ * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ */
 public class VertxTestContextParameterProvider implements VertxExtensionParameterProvider<VertxTestContext> {
 
   @Override

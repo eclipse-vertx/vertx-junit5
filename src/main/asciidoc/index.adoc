@@ -164,20 +164,17 @@ Because of asynchronous operations it is possible that the effects of these meth
 
 This is a problem of JUnit 5 rather than this module. In case of doubt you may always wonder why a single method can't be better than many.
 
-==== Support for RxJava 1 and 2 Vertx instances
+== Support for additional parameter types
 
-Reactive eXtension support in Vert.x is being provided by the `vertx-rx-java` and `vertx-rx-java2` modules.
-They provide shims / wrappers around the Vert.x core APIs, like {@link io.vertx.rxjava.core.Vertx} (RxJava 1) and {@link io.vertx.reactivex.core.Vertx} (RxJava 2).
+The `vertx-junit5-extensions` project offers extensions to support additional parameter types, notably:
 
-Instances of these _"Rx-ified"_ `Vertx` classes can be injected in test and lifecycle methods, as in:
+- `Vertx` bindings for RxJava and RxJava 2,
+- The Vert.x Web Client.
 
-[source,java]
-----
-{@link examples.RxJava2Test}
-----
+For instance if you want to inject `io.vertx.reactivex.core.Vertx` rather than `io.vertx.core.Vertx` then all you need is adding the `vertx-junit5-rx-java2` library as a dependency.
 
-== JUnit 5 additional extensions
-
-Vert.x provides additional modules to simplify testing of your Vert.x application:
-
-* https://vertx.io/docs/vertx-junit5-web-client/$lang/[Vert.x Junit 5 Web Client] to use https://vertx.io/docs/vertx-web-client/$lang/[Vert.x Web Client] to create Http requests in your tests and simplify assertions on responses
+[TIP]
+====
+The Vert.x JUnit 5 extension is extensible: you can add more types through the
+{@link io.vertx.junit5.VertxExtensionParameterProvider} service provider interface.
+====

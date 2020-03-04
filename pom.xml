@@ -19,7 +19,6 @@
 
   <modules>
     <module>vertx-junit5</module>
-    <module>vertx-junit5-web-client</module>
   </modules>
 
 

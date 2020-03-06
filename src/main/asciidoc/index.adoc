@@ -178,3 +178,13 @@ For instance if you want to inject `io.vertx.reactivex.core.Vertx` rather than `
 The Vert.x JUnit 5 extension is extensible: you can add more types through the
 {@link io.vertx.junit5.VertxExtensionParameterProvider} service provider interface.
 ====
+
+== Parameter ordering
+
+It may be the case that a parameter type has to be placed before another parameter.
+For instance the Web Client support in the `vertx-junit5-extensions` project requires that the `Vertx` argument is before the `WebClient` argument.
+This is because the `Vertx` instance needs to exist to create the `WebClient`.
+
+It is expected that parameter providers throw meaningful exceptions to let users know of possible ordering constraints.
+
+In any case it is a good idea to have the `Vertx` parameter first, and the next parameters in the order of what you'd need to create them manually.

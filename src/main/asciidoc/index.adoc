@@ -1,0 +1,190 @@
+= Vert.x JUnit 5 integration
+
+This module offers integration and support for writing Vert.x tests with JUnit 5.
+
+== Use it in your build
+
+* `groupId`: `io.vertx`
+* `artifactId`: `vertx-junit5`
+* `version`: (current Vert.x release or SNAPSHOT)
+
+== Why testing asynchronous code is different
+
+Testing asynchronous operations requires more tools than what a test harness like JUnit provides.
+Let us consider a typical Vert.x creation of a HTTP server, and put it into a JUnit test:
+
+[source,java]
+----
+{@link examples.Examples.ATest}
+----
+
+There are issues here since `listen` does not block as it tries to start a HTTP server asynchronously.
+We cannot simply assume that the server has properly started upon a `listen` invocation return.
+Also:
+
+1. the callback passed to `listen` will be executed from a Vert.x event loop thread, which is different from the thread that runs the JUnit test, and
+2. right after calling `listen`, the test exits and is being considered to be passed, while the HTTP server may not even have finished starting, and
+3. since the `listen` callback executes on a different thread than the one executing the test, then any exception such as one thrown by a failed assertion cannot be capture by the JUnit runner.
+
+== A test context for asynchronous executions
+
+The first contribution of this module is a {@link io.vertx.junit5.VertxTestContext} object that:
+
+1. allows waiting for operations in other threads to notify of completion, and
+2. supports assertion failures to be received to mark a test as failed.
+
+Here is a very basic usage:
+
+[source,java]
+----
+{@link examples.Examples.BTest}
+----
+<1> {@link io.vertx.junit5.VertxTestContext#completing} returns an asynchronous result handler that is expected to succeed and then make the test context pass.
+<2> {@link io.vertx.junit5.VertxTestContext#awaitCompletion} has the semantics of a `java.util.concurrent.CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
+<3> If the context captures a (potentially asynchronous) error, then after completion we must throw the failure exception to make the test fail.
+
+== Use any assertion library
+
+This module does not make any assumption on the assertion library that you should be using.
+You can use plain JUnit assertions, http://joel-costigliola.github.io/assertj/[AssertJ], etc.
+
+To make assertions in asynchronous code and make sure that {@link io.vertx.junit5.VertxTestContext} is notified of potential failures, you need to wrap them with a call to {@link io.vertx.junit5.VertxTestContext#verify}:
+
+[source,java]
+----
+{@link examples.Examples#usingVerify}
+----
+
+The useful methods in {@link io.vertx.junit5.VertxTestContext} are the following:
+
+* {@link io.vertx.junit5.VertxTestContext#completeNow} and {@link io.vertx.junit5.VertxTestContext#failNow} to notify of a success or failure
+* {@link io.vertx.junit5.VertxTestContext#completing} to provide `Handler<AsyncResult<T>>` handlers that expect a success and then completes the test context
+* {@link io.vertx.junit5.VertxTestContext#succeeding} to provide `Handler<AsyncResult<T>>` handlers that expect a success, and optionally pass the result to another callback
+* {@link io.vertx.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
+* {@link io.vertx.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the code block is considered as a test failure.
+
+WARNING: Unlike `completing()`, calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).
+To make a test pass you still need to call `completeNow`, or use checkpoints as explained below.
+
+== Checkpoint when there are multiple success conditions
+
+Many tests can be marked as passed by simply calling {@link io.vertx.junit5.VertxTestContext#completeNow} at some point of the execution.
+That being said there are also many cases where the success of a test depends on different asynchronous parts to be validated.
+
+You can use checkpoints to flag some execution points to be passed.
+A {@link io.vertx.junit5.Checkpoint} can require a single flagging, or multiple flags.
+When all checkpoints have been flagged, then the corresponding {@link io.vertx.junit5.VertxTestContext} makes the test pass.
+
+Here is an example with checkpoints on the HTTP server being started, 10 HTTP requests having being responded, and 10 HTTP client requests having been made:
+
+[source,java]
+----
+{@link examples.Examples#checkpointing}
+----
+
+TIP: Checkpoints should be created only from the test case main thread, not from Vert.x asynchronous event callbacks.
+
+== Integration with JUnit 5
+
+JUnit 5 provides a different model compared to the previous versions.
+
+=== Test methods
+
+The Vert.x integration is primarily done using the {@link io.vertx.junit5.VertxExtension} class, and using test parameter injection of `Vertx` and `VertxTestContext` instances:
+
+[source,java]
+----
+{@link examples.Examples.CTest.SomeTest}
+----
+
+NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
+
+The test is automatically wrapped around the {@link io.vertx.junit5.VertxTestContext} instance lifecycle, so you don't need to insert {@link io.vertx.junit5.VertxTestContext#awaitCompletion} calls yourself:
+
+[source,java]
+----
+{@link examples.Examples.DTest.SomeTest}
+----
+
+You can use it with standard JUnit annotations such as `@RepeatedTest` or lifecycle callbacks annotations:
+
+[source,java]
+----
+{@link examples.Examples.ETest.SomeTest}
+----
+
+It is also possible to customize the default {@link io.vertx.junit5.VertxTestContext} timeout using the {@link io.vertx.junit5.Timeout} annotation either on test classes or methods:
+
+[source,java]
+----
+{@link examples.Examples.FTest.SomeTest}
+----
+
+=== Lifecycle methods
+
+JUnit 5 provides several user-defined lifecycle methods annotated with `@BeforeAll`, `@BeforeEach`, `@AfterEach` and `@AfterAll`.
+
+These methods can request the injection of `Vertx` instances.
+By doing so, they are likely to perform asynchronous operations with the `Vertx` instance, so they can request the injection of a `VertxTestContext` instance to ensure that the JUnit runner waits for them to complete, and report possible errors.
+
+Here is an example:
+
+[source,java]
+----
+{@link examples.LifecycleExampleTest}
+----
+
+==== Scope of `VertxTestContext` objects
+
+Since these objects help waiting for asynchronous operations to complete, a new instance is created for any `@Test`, `@BeforeAll`, `@BeforeEach`, `@AfterEach` and `@AfterAll` method.
+
+==== Scope of `Vertx` objects
+
+The scope of a `Vertx` object depends on which lifecycle method in the http://junit.org/junit5/docs/current/user-guide/#extensions-execution-order[JUnit relative execution order] first required a new instance to be created.
+Generally-speaking, we respect the JUnit extension scoping rules, but here are the specifications.
+
+1. If a parent test context already had a `Vertx` instance, it is being reused in children extension test contexts.
+2. Injecting in a `@BeforeAll` method creates a new instance that is being shared for injection in all subsequent test and lifecycle methods.
+3. Injecting in a `@BeforeEach` with no parent context or previous `@BeforeAll` injection creates a new instance shared with the corresponding test and `AfterEach` method(s).
+4. When no instance exists before running a test method, an instance is created for that test (and only for that test).
+
+==== Closing and removal of `Vertx` objects
+
+Injected `Vertx` objects are being automatically closed and removed from their corresponding scopes.
+
+For instance if a `Vertx` object is created for the scope of a test method, it is being closed after the test completes.
+Similarly, when it is being created by a `@BeforeEach` method, it is being closed after possible `@AfterEach` methods have completed.
+
+==== Warning on multiple methods for the same lifecycle events
+
+JUnit 5 allows multiple methods to exist for the same lifecycle events.
+
+As an example, it is possible to define 3 `@BeforeEach` methods on the same test.
+Because of asynchronous operations it is possible that the effects of these methods happen concurrently rather than sequentially, which may lead to inconsistent states.
+
+This is a problem of JUnit 5 rather than this module. In case of doubt you may always wonder why a single method can't be better than many.
+
+== Support for additional parameter types
+
+The `vertx-junit5-extensions` project offers extensions to support additional parameter types, notably:
+
+- `Vertx` bindings for RxJava and RxJava 2,
+- The Vert.x Web Client.
+
+For instance if you want to inject `io.vertx.reactivex.core.Vertx` rather than `io.vertx.core.Vertx` then all you need is adding the `vertx-junit5-rx-java2` library as a dependency.
+
+[TIP]
+====
+The Vert.x JUnit 5 extension is extensible: you can add more types through the
+{@link io.vertx.junit5.VertxExtensionParameterProvider} service provider interface.
+====
+
+== Parameter ordering
+
+It may be the case that a parameter type has to be placed before another parameter.
+For instance the Web Client support in the `vertx-junit5-extensions` project requires that the `Vertx` argument is before the `WebClient` argument.
+This is because the `Vertx` instance needs to exist to create the `WebClient`.
+
+It is expected that parameter providers throw meaningful exceptions to let users know of possible ordering constraints.
+
+In any case it is a good idea to have the `Vertx` parameter first, and the next parameters in the order of what you'd need to create them manually.

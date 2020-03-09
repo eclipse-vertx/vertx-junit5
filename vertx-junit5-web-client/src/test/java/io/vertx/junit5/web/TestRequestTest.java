@@ -45,7 +45,7 @@ public class TestRequestTest {
   @Test
   public void testSimpleSend(WebClient client, Vertx vertx, VertxTestContext testContext) {
     startHttpServer(vertx, req -> req.response().setStatusCode(200).setStatusMessage("Ciao!").end())
-      .setHandler(testContext.succeeding(h -> {
+      .onComplete(testContext.succeeding(h -> {
         testRequest(client, HttpMethod.GET, "/path")
           .expect(statusCode(200), statusMessage("Ciao!"))
           .send(testContext);
@@ -61,7 +61,7 @@ public class TestRequestTest {
         .setStatusMessage("Ciao!")
       .putHeader("content-type", "application/json; charset=utf-8");
       req.bodyHandler(buf -> req.response().end(buf));
-    }).setHandler(testContext.succeeding(h -> {
+    }).onComplete(testContext.succeeding(h -> {
         testRequest(client, HttpMethod.GET, "/path")
           .expect(jsonBodyResponse(jo))
           .sendJson(jo, testContext);
@@ -76,7 +76,7 @@ public class TestRequestTest {
         .setStatusMessage("Ciao!")
         .putHeader("x-my-header", req.getHeader("x-my-header"))
         .end()
-    ).setHandler(testContext.succeeding(h -> {
+    ).onComplete(testContext.succeeding(h -> {
       testRequest(client, HttpMethod.GET, "/path")
         .with(requestHeader("x-my-header", "Ciao!"))
         .expect(responseHeader("x-my-header", "Ciao!"))
@@ -93,7 +93,7 @@ public class TestRequestTest {
       req.response()
         .setStatusCode(500)
         .end()
-    ).setHandler(testContext.succeeding(h ->
+    ).onComplete(testContext.succeeding(h ->
       testRequest(client.get(""))
         .expect(statusCode(200))
         .send(testContext)

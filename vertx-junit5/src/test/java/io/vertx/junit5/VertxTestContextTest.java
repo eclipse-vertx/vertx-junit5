@@ -266,7 +266,7 @@ class VertxTestContextTest {
     context
       .assertComplete(Future.succeededFuture("bla"))
       .compose(s -> context.assertComplete(Future.succeededFuture(s + "bla")))
-      .setHandler(context.succeeding(res -> {
+      .onComplete(context.succeeding(res -> {
         assertThat(res).isEqualTo("blabla");
         context.completeNow();
       }));
@@ -281,7 +281,7 @@ class VertxTestContextTest {
     context
       .assertComplete(Future.succeededFuture("bla"))
       .compose(s -> context.assertComplete(Future.failedFuture(new IllegalStateException(s + "bla"))))
-      .setHandler(context.succeeding(res -> {
+      .onComplete(context.succeeding(res -> {
         context.completeNow();
       }));
     assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
@@ -303,7 +303,7 @@ class VertxTestContextTest {
         .compose(s -> Future.failedFuture(new IllegalStateException(s + "bla")))
         .recover(ex -> Future.succeededFuture(ex.getMessage()))
       )
-      .setHandler(context.succeeding(res -> {
+      .onComplete(context.succeeding(res -> {
         assertThat(res).isEqualTo("blabla");
         context.completeNow();
       }));
@@ -319,7 +319,7 @@ class VertxTestContextTest {
       .assertComplete(Future.succeededFuture("bla")
         .compose(s -> Future.failedFuture(new IllegalStateException(s + "bla")))
       )
-      .setHandler(context.succeeding(res -> {
+      .onComplete(context.succeeding(res -> {
         context.completeNow();
       }));
     assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
@@ -339,7 +339,7 @@ class VertxTestContextTest {
     context
       .assertFailure(Future.failedFuture(new IllegalStateException("bla")))
       .recover(s -> context.assertFailure(Future.failedFuture(new IllegalStateException(s.getMessage() + "bla"))))
-      .setHandler(context.failing(ex -> {
+      .onComplete(context.failing(ex -> {
         assertThat(ex)
           .isInstanceOf(IllegalStateException.class)
           .hasMessage("blabla");
@@ -356,7 +356,7 @@ class VertxTestContextTest {
     context
       .assertFailure(Future.failedFuture(new IllegalStateException("bla")))
       .recover(s -> context.assertFailure(Future.succeededFuture(s.getMessage() + "bla")))
-      .setHandler(context.succeeding(res -> {
+      .onComplete(context.succeeding(res -> {
         context.completeNow();
       }));
     assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();

@@ -261,7 +261,7 @@ public final class VertxTestContext {
    */
   public <T> Future<T> assertComplete(Future<T> fut) {
     Promise<T> newPromise = Promise.promise();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       if (ar.succeeded()) {
         newPromise.complete(ar.result());
       } else {
@@ -283,7 +283,7 @@ public final class VertxTestContext {
    */
   public <T> Future<T> assertFailure(Future<T> fut) {
     Promise<T> newPromise = Promise.promise();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       if (ar.succeeded()) {
         Throwable ex = new AssertionError("Future completed with value: " + ar.result());
         this.failNow(ex);

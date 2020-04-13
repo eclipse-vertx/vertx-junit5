@@ -25,6 +25,7 @@ import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,14 +37,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
+@ExtendWith(VertxExtension.class)
 public class Examples {
 
   @ExtendWith(VertxExtension.class)
   class ATest {
+    Vertx vertx = Vertx.vertx();
 
     @Test
     void start_server() {
-      Vertx vertx = Vertx.vertx();
       vertx.createHttpServer()
         .requestHandler(req -> req.response().end("Ok"))
         .listen(16969, ar -> {
@@ -52,14 +54,22 @@ public class Examples {
     }
   }
 
+  @Nested
+  class ATestNested extends ATest {
+    @BeforeEach
+    void setVertx(Vertx vertx) {
+      this.vertx = vertx;
+    }
+  }
+
   @ExtendWith(VertxExtension.class)
   class BTest {
+    Vertx vertx = Vertx.vertx();
 
     @Test
     void start_http_server() throws Throwable {
       VertxTestContext testContext = new VertxTestContext();
 
-      Vertx vertx = Vertx.vertx();
       vertx.createHttpServer()
         .requestHandler(req -> req.response().end())
         .listen(16969, testContext.completing()); // <1>
@@ -71,17 +81,34 @@ public class Examples {
     }
   }
 
+  @Nested
+  class BTestNested extends BTest {
+    @BeforeEach
+    void setVertx(Vertx vertx) {
+      this.vertx = vertx;
+    }
+  }
+
+  @BeforeEach
+  void startPlopServer(Vertx vertx, VertxTestContext testContext) {
+    vertx.createHttpServer()
+      .requestHandler(request -> request.response().end("Plop"))
+      .listen(8080, testContext.completing());
+  }
+
+  @Test
   public void usingVerify(Vertx vertx, VertxTestContext testContext) {
     HttpClient client = vertx.createHttpClient();
 
     client.get(8080, "localhost", "/")
       .flatMap(HttpClientResponse::body)
-      .onSuccess(buffer -> testContext.verify(() -> {
+      .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
         assertThat(buffer.toString()).isEqualTo("Plop");
         testContext.completeNow();
-      }));
+      })));
   }
 
+  @Test
   public void checkpointing(Vertx vertx, VertxTestContext testContext) {
     Checkpoint serverStarted = testContext.checkpoint();
     Checkpoint requestsServed = testContext.checkpoint(10);
@@ -92,20 +119,16 @@ public class Examples {
         req.response().end("Ok");
         requestsServed.flag();
       })
-      .listen(8080, ar -> {
-        if (ar.failed()) {
-          testContext.failNow(ar.cause());
-        } else {
-          serverStarted.flag();
-        }
-      });
+      .listen(8888, testContext.succeeding(httpServer -> serverStarted.flag()));
 
     HttpClient client = vertx.createHttpClient();
     for (int i = 0; i < 10; i++) {
-      client.get(8080, "localhost", "/")
+      client.get(8888, "localhost", "/")
         .flatMap(HttpClientResponse::body)
-        .onSuccess(buffer -> testContext.verify(() -> assertThat(buffer.toString()).isEqualTo("Ok")))
-        .onFailure(testContext::failNow);
+        .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+          assertThat(buffer.toString()).isEqualTo("Ok");
+          responsesReceived.flag();
+        })));
     }
   }
 
@@ -129,17 +152,25 @@ public class Examples {
     @ExtendWith(VertxExtension.class)
     class SomeTest {
 
+      @Test
       void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
         vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
           HttpClient client = vertx.createHttpClient();
           client.get(8080, "localhost", "/")
             .flatMap(HttpClientResponse::body)
-            .onSuccess(buffer -> testContext.verify(() -> {
+            .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
               assertThat(buffer.toString()).isEqualTo("Plop");
               testContext.completeNow();
-            }));
+            })));
         }));
       }
+    }
+  }
+
+  @Nested
+  class DTestNested extends DTest {
+    @Nested
+    class SomeTestNested extends DTest.SomeTest {
     }
   }
 
@@ -148,7 +179,8 @@ public class Examples {
     @ExtendWith(VertxExtension.class)
     class SomeTest {
 
-      // Deploy the verticle and execute the test methods when the verticle is successfully deployed
+      // Deploy the verticle and execute the test methods when the verticle
+      // is successfully deployed
       @BeforeEach
       void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
         vertx.deployVerticle(new HttpServerVerticle(), testContext.completing());
@@ -160,11 +192,18 @@ public class Examples {
         HttpClient client = vertx.createHttpClient();
         client.get(8080, "localhost", "/")
           .flatMap(HttpClientResponse::body)
-          .onSuccess(buffer -> testContext.verify(() -> {
+          .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
             assertThat(buffer.toString()).isEqualTo("Plop");
             testContext.completeNow();
-          }));
+          })));
       }
+    }
+  }
+
+  @Nested
+  class ETestNested extends ETest {
+    @Nested
+    class SomeTestNested extends ETest.SomeTest {
     }
   }
 

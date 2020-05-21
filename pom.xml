@@ -38,6 +38,7 @@
     <assertj-core.version>3.14.0</assertj-core.version>
     <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
     <junit-platform-launcher.version>1.6.0</junit-platform-launcher.version>
+    <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
   </properties>
 
   <dependencyManagement>

@@ -170,20 +170,6 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   /**
-   * Create an asynchronous result handler that expects a success.
-   *
-   * @param <T> the asynchronous result type.
-   * @return the handler.
-   */
-  public <T> Handler<AsyncResult<T>> succeeding() {
-    return ar -> {
-      if (!ar.succeeded()) {
-        failNow(ar.cause());
-      }
-    };
-  }
-
-  /**
    * Create an asynchronous result handler that expects a success, and passes the value to another handler.
    *
    * @param nextHandler the value handler to call on success.
@@ -197,20 +183,6 @@ public final class VertxTestContext {
         nextHandler.handle(ar.result());
       } else {
         failNow(ar.cause());
-      }
-    };
-  }
-
-  /**
-   * Create an asynchronous result handler that expects a failure.
-   *
-   * @param <T> the asynchronous result type.
-   * @return the handler.
-   */
-  public <T> Handler<AsyncResult<T>> failing() {
-    return ar -> {
-      if (ar.succeeded()) {
-        failNow(new AssertionError("The asynchronous result was expected to have failed"));
       }
     };
   }
@@ -238,6 +210,7 @@ public final class VertxTestContext {
    *
    * @param <T> the asynchronous result type.
    * @return the handler.
+   * @see #failingThenComplete()
    */
   public <T> Handler<AsyncResult<T>> completing() {
     return ar -> {
@@ -246,6 +219,23 @@ public final class VertxTestContext {
       } else {
         failNow(ar.cause());
       }
+    };
+  }
+
+  /**
+   * Create an asynchronous result handler that expects a failure to then complete the test context.
+   *
+   * @param <T> the asynchronous result type.
+   * @return the handler.
+   * @see #completing()
+   */
+  public <T> Handler<AsyncResult<T>> failingThenComplete() {
+    return ar -> {
+      if (ar.succeeded()) {
+        failNow(new AssertionError("The asynchronous result was expected to have failed"));
+        return;
+      }
+      completeNow();
     };
   }
 

@@ -170,6 +170,24 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   /**
+   * Create an asynchronous result handler that expects a success.
+   *
+   * @param <T> the asynchronous result type.
+   * @return the handler.
+   * @deprecated Use {@link #completing()} or {@link #succeeding(Handler)}, for example
+   *     <code>succeeding(value -> checkpoint.flag())</code>, <code>succeeding(value -> { more testing code })</code>, or
+   *     <code>succeeding(value -> {})</code>.
+   */
+  @Deprecated
+  public <T> Handler<AsyncResult<T>> succeeding() {
+    return ar -> {
+      if (!ar.succeeded()) {
+        failNow(ar.cause());
+      }
+    };
+  }
+
+  /**
    * Create an asynchronous result handler that expects a success, and passes the value to another handler.
    *
    * @param nextHandler the value handler to call on success.
@@ -183,6 +201,24 @@ public final class VertxTestContext {
         nextHandler.handle(ar.result());
       } else {
         failNow(ar.cause());
+      }
+    };
+  }
+
+  /**
+   * Create an asynchronous result handler that expects a failure.
+   *
+   * @param <T> the asynchronous result type.
+   * @return the handler.
+   * @deprecated Use {@link #failingThenComplete()} or {@link #failing(Handler)}, for example
+   *     <code>failing(e -> checkpoint.flag())</code>, <code>failing(e -> { more testing code })</code>, or
+   *     <code>failing(e -> {})</code>.
+   */
+  @Deprecated
+  public <T> Handler<AsyncResult<T>> failing() {
+    return ar -> {
+      if (ar.succeeded()) {
+        failNow(new AssertionError("The asynchronous result was expected to have failed"));
       }
     };
   }

@@ -18,6 +18,8 @@ package io.vertx.junit5;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -104,6 +106,21 @@ class VertxTestContextTest {
   }
 
   @Test
+  @DisplayName("Check callback exception of succeeding(callback)")
+  void check_succeeding_callback_with_exception() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    Handler<Object> nextHandler = obj -> {
+      throw new RuntimeException("Boom");
+    };
+    context.succeeding(nextHandler).handle(Future.succeededFuture());
+    assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure())
+      .isInstanceOf(RuntimeException.class)
+      .hasMessage("Boom");
+  }
+
+  @Test
   @DisplayName("Check the behavior of failing(callback)")
   void check_async_assert_fail_with_handler() throws InterruptedException {
     AtomicBoolean checker = new AtomicBoolean(false);
@@ -127,6 +144,21 @@ class VertxTestContextTest {
     assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isTrue();
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure()).hasMessage("The asynchronous result was expected to have failed");
+  }
+
+  @Test
+  @DisplayName("Check callback exception of failing(callback)")
+  void check_failing_callback_with_exception() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    Handler<Throwable> nextHandler = throwable -> {
+      throw new RuntimeException("Pow");
+    };
+    context.failing(nextHandler).handle(Future.failedFuture("some failure"));
+    assertThat(context.awaitCompletion(2, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure())
+      .isInstanceOf(RuntimeException.class)
+      .hasMessage("Pow");
   }
 
   @Test

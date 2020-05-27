@@ -186,17 +186,21 @@ public final class VertxTestContext {
   /**
    * Create an asynchronous result handler that expects a success, and passes the value to another handler.
    *
-   * @param nextHandler the value handler to call on success.
+   * @param nextHandler the value handler to call on success that is expected not to throw a {@link Throwable}.
    * @param <T>         the asynchronous result type.
    * @return the handler.
    */
   public <T> Handler<AsyncResult<T>> succeeding(Handler<T> nextHandler) {
     Objects.requireNonNull(nextHandler, "The handler cannot be null");
     return ar -> {
-      if (ar.succeeded()) {
-        nextHandler.handle(ar.result());
-      } else {
+      if (ar.failed()) {
         failNow(ar.cause());
+        return;
+      }
+      try {
+        nextHandler.handle(ar.result());
+      } catch (Throwable e) {
+        failNow(e);
       }
     };
   }
@@ -218,7 +222,7 @@ public final class VertxTestContext {
   /**
    * Create an asynchronous result handler that expects a failure, and passes the exception to another handler.
    *
-   * @param nextHandler the exception handler to call on failure.
+   * @param nextHandler the exception handler to call on failure that is expected not to throw a {@link Throwable}.
    * @param <T>         the asynchronous result type.
    * @return the handler.
    */
@@ -227,8 +231,12 @@ public final class VertxTestContext {
     return ar -> {
       if (ar.succeeded()) {
         failNow(new AssertionError("The asynchronous result was expected to have failed"));
-      } else {
+        return;
+      }
+      try {
         nextHandler.handle(ar.cause());
+      } catch (Throwable e) {
+        failNow(e);
       }
     };
   }

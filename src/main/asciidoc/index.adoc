@@ -48,7 +48,7 @@ Here is a very basic usage:
 This module does not make any assumption on the assertion library that you should be using.
 You can use plain JUnit assertions, http://joel-costigliola.github.io/assertj/[AssertJ], etc.
 
-To make assertions in asynchronous code and make sure that {@link io.vertx.junit5.VertxTestContext} is notified of potential failures, you need to wrap them with a call to {@link io.vertx.junit5.VertxTestContext#verify}:
+To make assertions in asynchronous code and make sure that {@link io.vertx.junit5.VertxTestContext} is notified of potential failures, you need to wrap them with a call to {@link io.vertx.junit5.VertxTestContext#verify}, {@link io.vertx.junit5.VertxTestContext#succeeding(io.vertx.core.Handler)}, or {@link io.vertx.junit5.VertxTestContext#failing(io.vertx.core.Handler)}:
 
 [source,java]
 ----
@@ -59,8 +59,8 @@ The useful methods in {@link io.vertx.junit5.VertxTestContext} are the following
 
 * {@link io.vertx.junit5.VertxTestContext#completeNow} and {@link io.vertx.junit5.VertxTestContext#failNow} to notify of a success or failure
 * {@link io.vertx.junit5.VertxTestContext#completing} to provide `Handler<AsyncResult<T>>` handlers that expect a success and then completes the test context
-* {@link io.vertx.junit5.VertxTestContext#succeeding} to provide `Handler<AsyncResult<T>>` handlers that expect a success, and optionally pass the result to another callback
-* {@link io.vertx.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback
+* {@link io.vertx.junit5.VertxTestContext#succeeding} to provide `Handler<AsyncResult<T>>` handlers that expect a success, and optionally pass the result to another callback, any exception thrown from the callback is considered as a test failure
+* {@link io.vertx.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure, and optionally pass the exception to another callback, any exception thrown from the callback is considered as a test failure
 * {@link io.vertx.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the code block is considered as a test failure.
 
 WARNING: Unlike `completing()`, calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).

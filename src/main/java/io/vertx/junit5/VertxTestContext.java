@@ -174,7 +174,7 @@ public final class VertxTestContext {
    *
    * @param <T> the asynchronous result type.
    * @return the handler.
-   * @deprecated Use {@link #completing()} or {@link #succeeding(Handler)}, for example
+   * @deprecated Use {@link #succeedingThenComplete()} or {@link #succeeding(Handler)}, for example
    *     <code>succeeding(value -> checkpoint.flag())</code>, <code>succeeding(value -> { more testing code })</code>, or
    *     <code>succeeding(value -> {})</code>.
    */
@@ -254,9 +254,8 @@ public final class VertxTestContext {
    *
    * @param <T> the asynchronous result type.
    * @return the handler.
-   * @see #failingThenComplete()
    */
-  public <T> Handler<AsyncResult<T>> completing() {
+  public <T> Handler<AsyncResult<T>> succeedingThenComplete() {
     return ar -> {
       if (ar.succeeded()) {
         completeNow();
@@ -267,11 +266,23 @@ public final class VertxTestContext {
   }
 
   /**
+   * Create an asynchronous result handler that expects a success to then complete the test context.
+   *
+   * @param <T> the asynchronous result type.
+   * @return the handler.
+   * @see #failingThenComplete()
+   * @deprecated Use {@link #succeedingThenComplete()} instead.
+   */
+  @Deprecated
+  public <T> Handler<AsyncResult<T>> completing() {
+    return succeedingThenComplete();
+  }
+
+  /**
    * Create an asynchronous result handler that expects a failure to then complete the test context.
    *
    * @param <T> the asynchronous result type.
    * @return the handler.
-   * @see #completing()
    */
   public <T> Handler<AsyncResult<T>> failingThenComplete() {
     return ar -> {

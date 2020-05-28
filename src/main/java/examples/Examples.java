@@ -72,7 +72,7 @@ public class Examples {
 
       vertx.createHttpServer()
         .requestHandler(req -> req.response().end())
-        .listen(16969, testContext.completing()); // <1>
+        .listen(16969, testContext.succeedingThenComplete()); // <1>
 
       assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue(); // <2>
       if (testContext.failed()) {  // <3>
@@ -93,7 +93,7 @@ public class Examples {
   void startPlopServer(Vertx vertx, VertxTestContext testContext) {
     vertx.createHttpServer()
       .requestHandler(request -> request.response().end("Plop"))
-      .listen(8080, testContext.completing());
+      .listen(8080, testContext.succeedingThenComplete());
   }
 
   @Test
@@ -183,7 +183,7 @@ public class Examples {
       // is successfully deployed
       @BeforeEach
       void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
-        vertx.deployVerticle(new HttpServerVerticle(), testContext.completing());
+        vertx.deployVerticle(new HttpServerVerticle(), testContext.succeedingThenComplete());
       }
 
       // Repeat this test 3 times

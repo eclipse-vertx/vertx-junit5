@@ -272,23 +272,47 @@ class VertxTestContextTest {
   }
 
   @Test
-  @DisplayName("Pass a success to a completing() async handler")
-  void check_completing_success() throws InterruptedException {
+  @DisplayName("Pass a success to a succeedingThenComplete() async handler")
+  void check_succeedingThenComplete_success() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
-    context.completing().handle(Future.succeededFuture());
+    context.succeedingThenComplete().handle(Future.succeededFuture());
     assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
     assertThat(context.completed()).isTrue();
   }
 
   @Test
-  @DisplayName("Pass a failure to a completing() async handler")
-  void check_completing_failure() throws InterruptedException {
+  @DisplayName("Pass a failure to a succeedingThenComplete() async handler")
+  void check_succeedingThenComplete_failure() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();
-    context.completing().handle(Future.failedFuture(new RuntimeException("Boo!")));
+    context.succeedingThenComplete().handle(Future.failedFuture(new RuntimeException("Boo!")));
     assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
     assertThat(context.completed()).isFalse();
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure()).hasMessage("Boo!");
+  }
+
+  @Test
+  @DisplayName("Pass a failure to a failingThenComplete() async handler")
+  void check_failingThenComplete_failure() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context.failingThenComplete().handle(Future.failedFuture(new IllegalArgumentException("42")));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.failed()).isFalse();
+    assertThat(context.completed()).isTrue();
+    assertThat(context.causeOfFailure()).isNull();
+  }
+
+  @Test
+  @DisplayName("Pass a success to a failingThenComplete() async handler")
+  void check_failingThenComplete_success() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+    context.failingThenComplete().handle(Future.succeededFuture("gold"));
+    assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(context.completed()).isFalse();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure())
+    .isInstanceOf(AssertionError.class)
+    .hasMessage("The asynchronous result was expected to have failed");
   }
 
   @Test

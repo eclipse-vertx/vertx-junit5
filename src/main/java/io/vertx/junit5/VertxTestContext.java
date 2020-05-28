@@ -174,7 +174,11 @@ public final class VertxTestContext {
    *
    * @param <T> the asynchronous result type.
    * @return the handler.
+   * @deprecated Use {@link #succeedingThenComplete()} or {@link #succeeding(Handler)}, for example
+   *     <code>succeeding(value -> checkpoint.flag())</code>, <code>succeeding(value -> { more testing code })</code>, or
+   *     <code>succeeding(value -> {})</code>.
    */
+  @Deprecated
   public <T> Handler<AsyncResult<T>> succeeding() {
     return ar -> {
       if (!ar.succeeded()) {
@@ -210,7 +214,11 @@ public final class VertxTestContext {
    *
    * @param <T> the asynchronous result type.
    * @return the handler.
+   * @deprecated Use {@link #failingThenComplete()} or {@link #failing(Handler)}, for example
+   *     <code>failing(e -> checkpoint.flag())</code>, <code>failing(e -> { more testing code })</code>, or
+   *     <code>failing(e -> {})</code>.
    */
+  @Deprecated
   public <T> Handler<AsyncResult<T>> failing() {
     return ar -> {
       if (ar.succeeded()) {
@@ -247,13 +255,42 @@ public final class VertxTestContext {
    * @param <T> the asynchronous result type.
    * @return the handler.
    */
-  public <T> Handler<AsyncResult<T>> completing() {
+  public <T> Handler<AsyncResult<T>> succeedingThenComplete() {
     return ar -> {
       if (ar.succeeded()) {
         completeNow();
       } else {
         failNow(ar.cause());
       }
+    };
+  }
+
+  /**
+   * Create an asynchronous result handler that expects a success to then complete the test context.
+   *
+   * @param <T> the asynchronous result type.
+   * @return the handler.
+   * @see #failingThenComplete()
+   * @deprecated Use {@link #succeedingThenComplete()} instead.
+   */
+  @Deprecated
+  public <T> Handler<AsyncResult<T>> completing() {
+    return succeedingThenComplete();
+  }
+
+  /**
+   * Create an asynchronous result handler that expects a failure to then complete the test context.
+   *
+   * @param <T> the asynchronous result type.
+   * @return the handler.
+   */
+  public <T> Handler<AsyncResult<T>> failingThenComplete() {
+    return ar -> {
+      if (ar.succeeded()) {
+        failNow(new AssertionError("The asynchronous result was expected to have failed"));
+        return;
+      }
+      completeNow();
     };
   }
 

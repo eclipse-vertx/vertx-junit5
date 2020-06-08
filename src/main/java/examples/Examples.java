@@ -72,7 +72,8 @@ public class Examples {
 
       vertx.createHttpServer()
         .requestHandler(req -> req.response().end())
-        .listen(16969, testContext.succeedingThenComplete()); // <1>
+        .listen(16969)
+        .onComplete(testContext.succeedingThenComplete()); // <1>
 
       assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue(); // <2>
       if (testContext.failed()) {  // <3>
@@ -101,7 +102,7 @@ public class Examples {
     HttpClient client = vertx.createHttpClient();
 
     client.get(8080, "localhost", "/")
-      .flatMap(HttpClientResponse::body)
+      .compose(HttpClientResponse::body)
       .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
         assertThat(buffer.toString()).isEqualTo("Plop");
         testContext.completeNow();
@@ -119,12 +120,13 @@ public class Examples {
         req.response().end("Ok");
         requestsServed.flag();
       })
-      .listen(8888, testContext.succeeding(httpServer -> serverStarted.flag()));
+      .listen(8888)
+      .onComplete(testContext.succeeding(httpServer -> serverStarted.flag()));
 
     HttpClient client = vertx.createHttpClient();
     for (int i = 0; i < 10; i++) {
       client.get(8888, "localhost", "/")
-        .flatMap(HttpClientResponse::body)
+        .compose(HttpClientResponse::body)
         .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
           assertThat(buffer.toString()).isEqualTo("Ok");
           responsesReceived.flag();
@@ -157,7 +159,7 @@ public class Examples {
         vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
           HttpClient client = vertx.createHttpClient();
           client.get(8080, "localhost", "/")
-            .flatMap(HttpClientResponse::body)
+            .compose(HttpClientResponse::body)
             .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
               assertThat(buffer.toString()).isEqualTo("Plop");
               testContext.completeNow();
@@ -191,7 +193,7 @@ public class Examples {
       void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
         HttpClient client = vertx.createHttpClient();
         client.get(8080, "localhost", "/")
-          .flatMap(HttpClientResponse::body)
+          .compose(HttpClientResponse::body)
           .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
             assertThat(buffer.toString()).isEqualTo("Plop");
             testContext.completeNow();

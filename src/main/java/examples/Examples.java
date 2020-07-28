@@ -29,8 +29,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -218,6 +222,27 @@ public class Examples {
       @Timeout(value = 10, timeUnit = TimeUnit.SECONDS)
       void some_test(Vertx vertx, VertxTestContext context) {
         // (...)
+      }
+    }
+  }
+
+  static class PTest {
+
+    @ExtendWith(VertxExtension.class)
+    static class SomeTest {
+
+      static Stream<Arguments> testData() {
+        return Stream.of(
+          Arguments.of("complex object1", 4),
+          Arguments.of("complex object2", 0)
+        );
+      }
+
+      @ParameterizedTest
+      @MethodSource("testData")
+       void test2(String obj, int count, Vertx vertx, VertxTestContext testContext) {
+        // your test code
+        testContext.completeNow();
       }
     }
   }

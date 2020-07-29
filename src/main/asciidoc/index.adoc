@@ -189,3 +189,16 @@ This is because the `Vertx` instance needs to exist to create the `WebClient`.
 It is expected that parameter providers throw meaningful exceptions to let users know of possible ordering constraints.
 
 In any case it is a good idea to have the `Vertx` parameter first, and the next parameters in the order of what you'd need to create them manually.
+
+== Parameterized tests with `@MethodSource`
+
+You can use parameterized tests with `@MethodSource` with vertx-junit5. Therefore you need to declare the method source parameters before the vertx test parameters in
+the method definition.
+
+[source,java]
+----
+{@link examples.Examples.PTest.SomeTest}
+----
+
+The same holds for the other `ArgumentSources`. See the section `Formal Parameter List` in the API doc of
+https://junit.org/junit5/docs/current/api/org.junit.jupiter.params/org/junit/jupiter/params/ParameterizedTest.html[ParameterizedTest]

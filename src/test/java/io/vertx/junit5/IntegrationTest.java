@@ -21,6 +21,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -79,8 +80,8 @@ class IntegrationTest {
 
       vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
         HttpClient client = vertx.createHttpClient();
-        client.get(8080, "localhost", "/")
-          .flatMap(HttpClientResponse::body)
+        client.request(HttpMethod.GET, 8080, "localhost", "/")
+          .flatMap(req -> req.send().compose(HttpClientResponse::body))
           .onFailure(testContext::failNow)
           .onSuccess(buffer -> testContext.verify(() -> {
             assertThat(buffer.toString()).isEqualTo("Plop");
@@ -127,8 +128,8 @@ class IntegrationTest {
 
       HttpClient client = vertx.createHttpClient();
       for (int i = 0; i < 10; i++) {
-        client.get(8080, "localhost", "/")
-          .flatMap(HttpClientResponse::body)
+        client.request(HttpMethod.GET, 8080, "localhost", "/")
+          .flatMap(req -> req.send().compose(HttpClientResponse::body))
           .onFailure(testContext::failNow)
           .onSuccess(buffer -> {
             testContext.verify(() -> assertThat(buffer.toString()).isEqualTo("Ok"));

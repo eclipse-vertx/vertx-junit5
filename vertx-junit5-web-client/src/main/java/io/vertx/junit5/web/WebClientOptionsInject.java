@@ -25,6 +25,7 @@ import java.lang.annotation.Target;
  * Look at {@link VertxWebClientExtension} for more details
  *
  * @author <a href="https://slinkydeveloper.com">Francesco Guardiani</a>
+ * @deprecated From Vert.x 4 onward this package lives in reactiverse as <a href="https://github.com/reactiverse/reactiverse-junit5-extensions/">reactiverse-junit5-extensions</a>
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})

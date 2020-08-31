@@ -175,9 +175,3 @@ Instances of these _"Rx-ified"_ `Vertx` classes can be injected in test and life
 ----
 {@link examples.RxJava2Test}
 ----
-
-== JUnit 5 additional extensions
-
-Vert.x provides additional modules to simplify testing of your Vert.x application:
-
-* https://vertx.io/docs/vertx-junit5-web-client/$lang/[Vert.x Junit 5 Web Client] to use https://vertx.io/docs/vertx-web-client/$lang/[Vert.x Web Client] to create Http requests in your tests and simplify assertions on responses

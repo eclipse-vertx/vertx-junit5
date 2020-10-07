@@ -20,6 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
+import io.vertx.core.impl.NoStackTraceThrowable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +40,7 @@ class VertxTestContextTest {
   @DisplayName("Check that failing with a null exception is forbidden")
   void fail_with_null() {
     VertxTestContext context = new VertxTestContext();
-    assertThatThrownBy(() -> context.failNow(null))
+    assertThatThrownBy(() -> context.failNow((Throwable) null))
       .isInstanceOf(NullPointerException.class)
       .hasMessage("The exception cannot be null");
   }
@@ -455,5 +456,17 @@ class VertxTestContextTest {
 
     b.flag();
     assertThat(context.unsatisfiedCheckpointCallSites()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("Check failNow() called with a string")
+  void check_fail_now_called_with_a_string() {
+    VertxTestContext context = new VertxTestContext();
+
+    context.failNow("error message");
+
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure()).isInstanceOf(NoStackTraceThrowable.class);
+    assertThat(context.causeOfFailure()).hasMessage("error message");
   }
 }

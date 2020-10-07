@@ -467,5 +467,6 @@ class VertxTestContextTest {
 
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure()).isInstanceOf(NoStackTraceThrowable.class);
+    assertThat(context.causeOfFailure()).hasMessage("error message");
   }
 }

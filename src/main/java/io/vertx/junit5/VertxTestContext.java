@@ -20,6 +20,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.impl.NoStackTraceThrowable;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -114,6 +115,15 @@ public final class VertxTestContext {
       throwableReference = t;
       releaseLatch.countDown();
     }
+  }
+
+  /**
+   * Calls {@link #failNow(Throwable)} with the {@code message}.
+   *
+   * @param message  the cause of failure
+   */
+  public synchronized void failNow(String message) {
+    failNow(new NoStackTraceThrowable(message));
   }
 
   // ........................................................................................... //

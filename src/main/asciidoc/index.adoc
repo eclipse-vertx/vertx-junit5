@@ -167,18 +167,14 @@ This is a problem of JUnit 5 rather than this module. In case of doubt you may a
 
 == Support for additional parameter types
 
-The `vertx-junit5-extensions` project offers extensions to support additional parameter types, notably:
-
-- `Vertx` bindings for RxJava and RxJava 2,
-- The Vert.x Web Client.
-
-For instance if you want to inject `io.vertx.reactivex.core.Vertx` rather than `io.vertx.core.Vertx` then all you need is adding the `vertx-junit5-rx-java2` library as a dependency.
-
-[TIP]
-====
 The Vert.x JUnit 5 extension is extensible: you can add more types through the
 {@link io.vertx.junit5.VertxExtensionParameterProvider} service provider interface.
-====
+
+If you use RxJava 2, you can inject a `io.vertx.reactivex.core.Vertx` (rather than `io.vertx.core.Vertx`) just adding the dependency `io.vertx:vertx-junit5-rx-java2`.
+The same applies for RxJava 1.x with the dependency `io.vertx:vertx-junit5-rx-java2`.
+
+On Reactiverse you can find a growing collection of extensions for `vertx-junit5` that integrates with Vert.x stack in the `reactiverse-junit5-extensions` project:
+https://github.com/reactiverse/reactiverse-junit5-extensions.
 
 == Parameter ordering
 

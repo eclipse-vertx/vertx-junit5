@@ -37,11 +37,11 @@
   <properties>
     <doc.skip>true</doc.skip>
     <stack.version>3.9.5-SNAPSHOT</stack.version>
-    <junit-jupiter.version>5.5.2</junit-jupiter.version>
+    <junit-jupiter.version>5.7.0</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
     <assertj-core.version>3.14.0</assertj-core.version>
     <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
-    <junit-platform-launcher.version>1.5.2</junit-platform-launcher.version>
+    <junit-platform-launcher.version>1.7.0</junit-platform-launcher.version>
   </properties>
 
   <dependencyManagement>

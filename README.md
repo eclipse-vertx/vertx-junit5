@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/vert-x3/vertx-junit5.svg?branch=master)](https://travis-ci.org/vert-x3/vertx-junit5)
+[![Build Status](https://github.com/vert-x3/vertx-junit5/workflows/CI/badge.svg?branch=master)](https://github.com/vert-x3/vertx-junit5/actions?query=workflow%3ACI)
 
 # Vert.x JUnit 5 integration
 

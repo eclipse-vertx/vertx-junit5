@@ -55,7 +55,7 @@ public class VertxWebClientExtension implements ParameterResolver {
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterContext.getParameter().getType();
-    return type.equals(WebClient.class) || type.equals(io.vertx.reactivex.ext.web.client.WebClient.class) || type.equals(io.vertx.rxjava.ext.web.client.WebClient.class);
+    return type.equals(WebClient.class) || type.getName().equals("io.vertx.reactivex.ext.web.client.WebClient") || type.getName().equals("io.vertx.rxjava.ext.web.client.WebClient");
   }
 
   @Override
@@ -65,10 +65,10 @@ public class VertxWebClientExtension implements ParameterResolver {
     if (WebClient.class.equals(type)) {
       return getWebClient(parameterContext, extensionContext, store);
     }
-    if (io.vertx.rxjava.ext.web.client.WebClient.class.equals(type)) {
+    if ("io.vertx.rxjava.ext.web.client.WebClient".equals(type.getName())) {
       return getRx1WebClient(parameterContext, extensionContext, store);
     }
-    if (io.vertx.reactivex.ext.web.client.WebClient.class.equals(type)) {
+    if ("io.vertx.reactivex.ext.web.client.WebClient".equals(type.getName())) {
       return getRx2WebClient(parameterContext, extensionContext, store);
     }
     throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");

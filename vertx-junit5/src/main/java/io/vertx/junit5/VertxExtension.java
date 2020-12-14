@@ -18,7 +18,6 @@ package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
-import io.vertx.core.spi.launcher.ExecutionContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.*;
@@ -34,7 +33,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -82,10 +80,17 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
 
   private static final HashSet<Class> INJECTABLE_TYPES = new HashSet<Class>() {
     {
+      ClassLoader loader = Thread.currentThread().getContextClassLoader();
       add(Vertx.class);
       add(VertxTestContext.class);
-      add(io.vertx.rxjava.core.Vertx.class);
-      add(io.vertx.reactivex.core.Vertx.class);
+      try {
+        add(Class.forName("io.vertx.rxjava.core.Vertx", true, loader));
+      } catch (ClassNotFoundException ignore) {
+      }
+      try {
+        add(Class.forName("io.vertx.reactivex.core.Vertx", true, loader));
+      } catch (ClassNotFoundException ignore) {
+      }
     }
   };
 
@@ -104,10 +109,10 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     if (type == Vertx.class) {
       return retrieveVertx(parameterContext.getDeclaringExecutable(), extensionContext);
     }
-    if (type == io.vertx.rxjava.core.Vertx.class) {
+    if (type.getName().equals("io.vertx.rxjava.core.Vertx")) {
       return retrieveRxJava1Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
     }
-    if (type == io.vertx.reactivex.core.Vertx.class) {
+    if (type.getName().equals("io.vertx.reactivex.core.Vertx")) {
       return retrieveRxJava2Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
     }
     if (type == VertxTestContext.class) {

@@ -54,24 +54,30 @@ public class VertxWebClientExtension implements ParameterResolver {
 
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    Class<?> type = parameterContext.getParameter().getType();
-    return type.equals(WebClient.class) || type.getName().equals("io.vertx.reactivex.ext.web.client.WebClient") || type.getName().equals("io.vertx.rxjava.ext.web.client.WebClient");
+    String type = parameterType(parameterContext);
+    return type.equals("io.vertx.ext.web.client.WebClient")
+      || type.equals("io.vertx.reactivex.ext.web.client.WebClient")
+      || type.equals("io.vertx.rxjava.ext.web.client.WebClient");
+  }
+
+  private String parameterType(ParameterContext parameterContext) {
+    return parameterContext.getParameter().getType().getName();
   }
 
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    Class<?> type = parameterContext.getParameter().getType();
+    String type = parameterType(parameterContext);
     ExtensionContext.Store store = extensionContext.getStore(ExtensionContext.Namespace.create(VertxWebClientExtension.class, extensionContext));
-    if (WebClient.class.equals(type)) {
-      return getWebClient(parameterContext, extensionContext, store);
+    switch (parameterType(parameterContext)) {
+      case "io.vertx.ext.web.client.WebClient":
+        return getWebClient(parameterContext, extensionContext, store);
+      case "io.vertx.rxjava.ext.web.client.WebClient":
+        return getRx1WebClient(parameterContext, extensionContext, store);
+      case "io.vertx.reactivex.ext.web.client.WebClient":
+        return getRx2WebClient(parameterContext, extensionContext, store);
+      default:
+        throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
     }
-    if ("io.vertx.rxjava.ext.web.client.WebClient".equals(type.getName())) {
-      return getRx1WebClient(parameterContext, extensionContext, store);
-    }
-    if ("io.vertx.reactivex.ext.web.client.WebClient".equals(type.getName())) {
-      return getRx2WebClient(parameterContext, extensionContext, store);
-    }
-    throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
 
   private WebClient getWebClient(ParameterContext parameterContext, ExtensionContext extensionContext, ExtensionContext.Store myStore) {

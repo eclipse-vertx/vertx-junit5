@@ -15,9 +15,9 @@
  */
 package io.vertx.junit5.web;
 
-import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.reactivex.ext.web.client.WebClient;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DisplayName("Test the injection of web client with default options")
 @ExtendWith({VertxExtension.class, VertxWebClientExtension.class})
-class WebClientExtensionCompleteLifecycleInjectionTest {
+class RxJava2WebClientExtensionCompleteLifecycleInjectionTest {
 
   @BeforeAll
   static void inTheBeginning(WebClient client, VertxTestContext testContext) {

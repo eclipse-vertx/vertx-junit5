@@ -18,7 +18,6 @@ package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
-import io.vertx.core.spi.launcher.ExecutionContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.*;
@@ -28,13 +27,11 @@ import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -80,40 +77,33 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
     BEFORE_ALL, BEFORE_EACH, TEST
   }
 
-  private static final HashSet<Class> INJECTABLE_TYPES = new HashSet<Class>() {
-    {
-      add(Vertx.class);
-      add(VertxTestContext.class);
-      add(io.vertx.rxjava.core.Vertx.class);
-      add(io.vertx.reactivex.core.Vertx.class);
-    }
-  };
-
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    return INJECTABLE_TYPES.contains(parameterType(parameterContext));
+    String parameterType = parameterType(parameterContext);
+    return parameterType.equals("io.vertx.core.Vertx")
+      || parameterType.equals("io.vertx.junit5.VertxTestContext")
+      || parameterType.equals("io.vertx.rxjava.core.Vertx")
+      || parameterType.equals("io.vertx.reactivex.core.Vertx");
   }
 
-  private Class<?> parameterType(ParameterContext parameterContext) {
-    return parameterContext.getParameter().getType();
+  private String parameterType(ParameterContext parameterContext) {
+    return parameterContext.getParameter().getType().getName();
   }
 
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    Class<?> type = parameterType(parameterContext);
-    if (type == Vertx.class) {
-      return retrieveVertx(parameterContext.getDeclaringExecutable(), extensionContext);
+    switch (parameterType(parameterContext)) {
+      case "io.vertx.core.Vertx":
+        return retrieveVertx(parameterContext.getDeclaringExecutable(), extensionContext);
+      case "io.vertx.rxjava.core.Vertx":
+        return retrieveRxJava1Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
+      case "io.vertx.reactivex.core.Vertx":
+        return retrieveRxJava2Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
+      case "io.vertx.junit5.VertxTestContext":
+        return newTestContext(extensionContext);
+      default:
+        throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
     }
-    if (type == io.vertx.rxjava.core.Vertx.class) {
-      return retrieveRxJava1Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
-    }
-    if (type == io.vertx.reactivex.core.Vertx.class) {
-      return retrieveRxJava2Vertx(parameterContext.getDeclaringExecutable(), extensionContext);
-    }
-    if (type == VertxTestContext.class) {
-      return newTestContext(extensionContext);
-    }
-    throw new IllegalStateException("Looks like the ParameterResolver needs a fix...");
   }
 
   private static Object getOrCreateScopedObject(Executable declaringExecutable, ExtensionContext extensionContext, String instanceKey, String phaseCreatorKey, Function<String, Object> creatorFunction) {

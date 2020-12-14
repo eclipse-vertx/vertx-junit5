@@ -53,6 +53,55 @@
         <configuration>
           <excludedGroups>programmatic</excludedGroups>
         </configuration>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <excludes>
+                <exclude>**/RxJava1*Test.java</exclude>
+                <exclude>**/RxJava2*Test.java</exclude>
+              </excludes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.vertx:vertx-rx-java</classpathDependencyExclude>
+                <classpathDependencyExclude>io.vertx:vertx-rx-java2</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>rxjava1-test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>**/RxJava1*Test.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.vertx:vertx-rx-java2</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>rxjava2-test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>**/RxJava2*Test.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.vertx:vertx-rx-java1</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

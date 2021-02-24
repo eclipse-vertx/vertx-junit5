@@ -39,7 +39,7 @@ import io.vertx.core.json.JsonObject;
 
 public class VertxParameterProvider implements VertxExtensionParameterProvider<Vertx> {
 
-  private static final String VERTX_PARAMETER_FILENAME = "vertx.paramerer.filename";
+  private static final String VERTX_PARAMETER_FILENAME = "vertx.parameter.filename";
 
   @Override
   public Class<Vertx> type() {

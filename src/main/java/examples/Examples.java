@@ -126,17 +126,19 @@ public class Examples {
         requestsServed.flag();
       })
       .listen(8888)
-      .onComplete(testContext.succeeding(httpServer -> serverStarted.flag()));
+      .onComplete(testContext.succeeding(httpServer -> {
+        serverStarted.flag();
 
-    HttpClient client = vertx.createHttpClient();
-    for (int i = 0; i < 10; i++) {
-      client.request(HttpMethod.GET, 8888, "localhost", "/")
-        .compose(req -> req.send().compose(HttpClientResponse::body))
-        .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
-          assertThat(buffer.toString()).isEqualTo("Ok");
-          responsesReceived.flag();
-        })));
-    }
+        HttpClient client = vertx.createHttpClient();
+        for (int i = 0; i < 10; i++) {
+          client.request(HttpMethod.GET, 8888, "localhost", "/")
+            .compose(req -> req.send().compose(HttpClientResponse::body))
+            .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+              assertThat(buffer.toString()).isEqualTo("Ok");
+              responsesReceived.flag();
+            })));
+        }
+      }));
   }
 
   class CTest {

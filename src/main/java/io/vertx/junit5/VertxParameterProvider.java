@@ -16,19 +16,30 @@
 
 package io.vertx.junit5;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-
 import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_DURATION;
 import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_UNIT;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonObject;
+
 public class VertxParameterProvider implements VertxExtensionParameterProvider<Vertx> {
+
+  public static final String VERTX_PARAMETER_FILENAME = "vertx.parameter.filename";
 
   @Override
   public Class<Vertx> type() {
@@ -42,7 +53,10 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
 
   @Override
   public Vertx newInstance(ExtensionContext extensionContext, ParameterContext parameterContext) {
-    return Vertx.vertx();
+
+    final JsonObject parameters = this.getVertxOptions();
+    final VertxOptions options = new VertxOptions(parameters);
+    return Vertx.vertx(options);
   }
 
   @Override
@@ -68,5 +82,20 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
         }
       }
     };
+  }
+
+  public JsonObject getVertxOptions() {
+    final JsonObject parameters = new JsonObject();
+    final String optionFileName = System.getenv(VERTX_PARAMETER_FILENAME);
+    if (optionFileName != null) {
+      Path path = Paths.get(optionFileName);
+      try {
+        final String read = Files.readAllLines(path, StandardCharsets.UTF_8).stream().collect(Collectors.joining("\n"));
+        parameters.mergeIn(new JsonObject(read));
+      } catch (IOException e) {
+        // Silently swallowing the error
+      }
+    }
+    return parameters;
   }
 }

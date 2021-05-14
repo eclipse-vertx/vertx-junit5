@@ -39,7 +39,7 @@ import io.vertx.core.json.JsonObject;
 
 public class VertxParameterProvider implements VertxExtensionParameterProvider<Vertx> {
 
-  private static final String VERTX_PARAMETER_FILENAME = "vertx.parameter.filename";
+  public static final String VERTX_PARAMETER_FILENAME = "vertx.parameter.filename";
 
   @Override
   public Class<Vertx> type() {
@@ -84,7 +84,7 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
     };
   }
 
-  private JsonObject getVertxOptions() {
+  public JsonObject getVertxOptions() {
     final JsonObject parameters = new JsonObject();
     final String optionFileName = System.getenv(VERTX_PARAMETER_FILENAME);
     if (optionFileName != null) {

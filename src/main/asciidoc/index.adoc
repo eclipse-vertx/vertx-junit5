@@ -157,6 +157,16 @@ A typical use case would be "extending blocking timeout warning for debugging". 
 1. create a json file with the `VertxOptions` in https://vertx.io/docs/apidocs/io/vertx/core/VertxOptions.html#VertxOptions-io.vertx.core.json.JsonObject-[json format] 
 2. create an environment variable `vertx.parameter.filename` pointing to that file
 
+Example file content for extended timeouts:
+
+[source,json]
+{
+  "blockedThreadCheckInterval" : 5,
+  "blockedThreadCheckIntervalUnit" : "MINUTES",
+  "maxEventLoopExecuteTime" : 360,
+  "maxEventLoopExecuteTimeUnit" : "SECONDS"
+}
+
 With these conditions met, the `Vertx` object will be created with the configured options
 
 ==== Closing and removal of `Vertx` objects

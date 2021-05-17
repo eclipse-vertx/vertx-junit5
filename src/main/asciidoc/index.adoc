@@ -149,6 +149,26 @@ Generally-speaking, we respect the JUnit extension scoping rules, but here are t
 3. Injecting in a `@BeforeEach` with no parent context or previous `@BeforeAll` injection creates a new instance shared with the corresponding test and `AfterEach` method(s).
 4. When no instance exists before running a test method, an instance is created for that test (and only for that test).
 
+==== Configuring `Vertx` instances
+
+By default the `Vertx` objects get created with `Vertx.vertx()`, using the default settings for `Vertx`. However you have the ability to configure `VertxOptions` to suit your needs.
+A typical use case would be "extending blocking timeout warning for debugging". To configure the `Vertx` object you must:
+
+1. create a json file with the `VertxOptions` in https://vertx.io/docs/apidocs/io/vertx/core/VertxOptions.html#VertxOptions-io.vertx.core.json.JsonObject-[json format] 
+2. create an environment variable `vertx.parameter.filename` pointing to that file
+
+Example file content for extended timeouts:
+
+[source,json]
+{
+  "blockedThreadCheckInterval" : 5,
+  "blockedThreadCheckIntervalUnit" : "MINUTES",
+  "maxEventLoopExecuteTime" : 360,
+  "maxEventLoopExecuteTimeUnit" : "SECONDS"
+}
+
+With these conditions met, the `Vertx` object will be created with the configured options
+
 ==== Closing and removal of `Vertx` objects
 
 Injected `Vertx` objects are being automatically closed and removed from their corresponding scopes.

@@ -154,7 +154,7 @@ Generally-speaking, we respect the JUnit extension scoping rules, but here are t
 By default the `Vertx` objects get created with `Vertx.vertx()`, using the default settings for `Vertx`. However you have the ability to configure `VertxOptions` to suit your needs.
 A typical use case would be "extending blocking timeout warning for debugging". To configure the `Vertx` object you must:
 
-1. create a json file with the `VertxOptions` in https://vertx.io/docs/apidocs/io/vertx/core/VertxOptions.html#VertxOptions-io.vertx.core.json.JsonObject-[json format] 
+1. create a json file with the `VertxOptions` in https://vertx.io/docs/apidocs/io/vertx/core/VertxOptions.html#VertxOptions-io.vertx.core.json.JsonObject-[json format]
 2. create an environment variable `vertx.parameter.filename` pointing to that file
 
 Example file content for extended timeouts:
@@ -190,8 +190,17 @@ This is a problem of JUnit 5 rather than this module. In case of doubt you may a
 The Vert.x JUnit 5 extension is extensible: you can add more types through the
 {@link io.vertx.junit5.VertxExtensionParameterProvider} service provider interface.
 
-If you use RxJava 2, you can inject a `io.vertx.reactivex.core.Vertx` (rather than `io.vertx.core.Vertx`) just adding the dependency `io.vertx:vertx-junit5-rx-java2`.
-The same applies for RxJava 1.x with the dependency `io.vertx:vertx-junit5-rx-java2`.
+If you use RxJava, instead of `io.vertx.core.Vertx` you can inject:
+
+* `io.vertx.rxjava3.core.Vertx`, or
+* `io.vertx.reactivex.core.Vertx`, or
+* `io.vertx.rxjava.core.Vertx`.
+
+To do so, add the corresponding library to your project:
+
+* `io.vertx:vertx-junit5-rx-java3`, or
+* `io.vertx:vertx-junit5-rx-java2`, or
+* `io.vertx:vertx-junit5-rx-java`.
 
 On Reactiverse you can find a growing collection of extensions for `vertx-junit5` that integrates with Vert.x stack in the `reactiverse-junit5-extensions` project:
 https://github.com/reactiverse/reactiverse-junit5-extensions.

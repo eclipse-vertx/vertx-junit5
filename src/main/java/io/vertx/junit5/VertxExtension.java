@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
  * <li>{@link VertxTestContext}</li>
  * <li>{@link io.vertx.rxjava.core.Vertx}</li>
  * <li>{@link io.vertx.reactivex.core.Vertx}</li>
+ * <li>{@link io.vertx.rxjava3.core.Vertx}</li>
  * </ul>
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>

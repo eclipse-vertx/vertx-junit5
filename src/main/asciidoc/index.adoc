@@ -227,3 +227,26 @@ the method definition.
 
 The same holds for the other `ArgumentSources`. See the section `Formal Parameter List` in the API doc of
 https://junit.org/junit5/docs/current/api/org.junit.jupiter.params/org/junit/jupiter/params/ParameterizedTest.html[ParameterizedTest]
+
+== Running tests on a Vert.x context
+
+By default the thread invoking the test methods is the JUnit thread.
+The {@link io.vertx.junit5.RunTestOnContext} extension can be used to alter this behavior by running test methods on a Vert.x event-loop thread.
+
+CAUTION: Keep in mind that you must not block the event loop when using this extension.
+
+For this purpose, the extension needs a {@link io.vertx.core.Vertx} instance.
+By default, it creates one automatically but you can provide options for configuration or a supplier method.
+
+The {@link io.vertx.core.Vertx} instance can be retrieved when the test is running.
+
+[source,java]
+----
+{@link examples.RunTestOnContextExampleTest}
+----
+
+When used as a `@RegisterExtension` instance field, a new {@link io.vertx.core.Vertx} object and {@link io.vertx.core.Context} are created for each tested method.
+`@BeforeEach` and `@AfterEach` methods are executed on this context.
+
+When used as a `@RegisterExtension` static field, a single {@link io.vertx.core.Vertx} object and {@link io.vertx.core.Context} are created for all the tested methods.
+`@BeforeAll` and `@AfterAll` methods are executed on this context too.

@@ -31,11 +31,11 @@
   <properties>
     <doc.skip>false</doc.skip>
     <stack.version>4.2.0-SNAPSHOT</stack.version>
-    <junit-jupiter.version>5.7.0</junit-jupiter.version>
+    <junit-jupiter.version>5.8.1</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
-    <assertj-core.version>3.14.0</assertj-core.version>
-    <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-    <junit-platform-launcher.version>1.7.0</junit-platform-launcher.version>
+    <assertj-core.version>3.21.0</assertj-core.version>
+    <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
+    <junit-platform-launcher.version>1.8.1</junit-platform-launcher.version>
     <system-lamda.version>1.2.0</system-lamda.version>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
   </properties>
@@ -115,5 +115,26 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>java17-running-test-with-strong-encapsulation</id>
+      <activation>
+        <jdk>17</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>${maven-surefire-plugin.version}</version>
+            <configuration>
+              <excludedGroups>programmatic</excludedGroups>
+              <argLine>--add-opens=java.base/java.util=ALL-UNNAMED</argLine>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

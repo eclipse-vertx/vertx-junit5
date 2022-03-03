@@ -16,17 +16,16 @@
 
 package io.vertx.junit5;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import io.vertx.core.json.JsonObject;
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="https://wissel.net/">Stephan Wisssel</a>
@@ -34,50 +33,50 @@ import io.vertx.core.json.JsonObject;
 @DisplayName("Test of VertxParameterProvider")
 public class VertxParameterProviderTest {
 
-    @Test
-    @DisplayName("Default case - empty VertxOptions")
-    void default_empty_options() {
-        VertxParameterProvider provider = new VertxParameterProvider();
-        JsonObject expected = new JsonObject();
-        JsonObject actual = provider.getVertxOptions();
-        assertEquals(expected.encode(), actual.encode(), "Options should be equally empty but are not");
-    }
+  @Test
+  @DisplayName("Default case - empty VertxOptions")
+  void default_empty_options() {
+    VertxParameterProvider provider = new VertxParameterProvider();
+    JsonObject expected = new JsonObject();
+    JsonObject actual = provider.getVertxOptions();
+    assertEquals(expected.encode(), actual.encode(), "Options should be equally empty but are not");
+  }
 
-    @Test
-    @DisplayName("Failed retrieval of options")
-    void failed_retrieval_of_options() throws Exception {
-        VertxParameterProvider provider = new VertxParameterProvider();
-        final JsonObject expected = new JsonObject();
-        final JsonObject actual = new JsonObject();
+  @Test
+  @DisplayName("Failed retrieval of options")
+  void failed_retrieval_of_options() throws Exception {
+    VertxParameterProvider provider = new VertxParameterProvider();
+    final JsonObject expected = new JsonObject();
+    final JsonObject actual = new JsonObject();
 
-        withEnvironmentVariable(VertxParameterProvider.VERTX_PARAMETER_FILENAME, "something.that.does.not.exist.json")
-                .execute(() -> {
-                    actual.mergeIn(provider.getVertxOptions());
-                });
+    withEnvironmentVariable(VertxParameterProvider.VERTX_PARAMETER_FILENAME, "something.that.does.not.exist.json")
+      .execute(() -> {
+        actual.mergeIn(provider.getVertxOptions());
+      });
 
-        assertEquals(expected.encode(), actual.encode(), "Options retrival failure not handled");
-    }
+    assertEquals(expected.encode(), actual.encode(), "Options retrival failure not handled");
+  }
 
-    @Test
-    @DisplayName("Retrieval of options")
-    void retrieval_of_options() throws Exception {
-        VertxParameterProvider provider = new VertxParameterProvider();
-        final JsonObject expected = new JsonObject().put("BlockedThreadCheckInterval", 120).put("MaxWorkerExecuteTime",
-                42);
-        final JsonObject actual = new JsonObject();
-        // Create a temp file and populate it with our expected values
-        File tempOptionFile = File.createTempFile("VertxOptions-", ".json");
-        tempOptionFile.deleteOnExit();
-        BufferedWriter writer = new BufferedWriter(new FileWriter(tempOptionFile.getAbsolutePath()));
-        writer.write(expected.encode());
-        writer.close();
+  @Test
+  @DisplayName("Retrieval of options")
+  void retrieval_of_options() throws Exception {
+    VertxParameterProvider provider = new VertxParameterProvider();
+    final JsonObject expected = new JsonObject().put("BlockedThreadCheckInterval", 120).put("MaxWorkerExecuteTime",
+      42);
+    final JsonObject actual = new JsonObject();
+    // Create a temp file and populate it with our expected values
+    File tempOptionFile = File.createTempFile("VertxOptions-", ".json");
+    tempOptionFile.deleteOnExit();
+    BufferedWriter writer = new BufferedWriter(new FileWriter(tempOptionFile.getAbsolutePath()));
+    writer.write(expected.encode());
+    writer.close();
 
-        withEnvironmentVariable(VertxParameterProvider.VERTX_PARAMETER_FILENAME, tempOptionFile.getAbsolutePath())
-                .execute(() -> {
-                    actual.mergeIn(provider.getVertxOptions());
-                });
+    withEnvironmentVariable(VertxParameterProvider.VERTX_PARAMETER_FILENAME, tempOptionFile.getAbsolutePath())
+      .execute(() -> {
+        actual.mergeIn(provider.getVertxOptions());
+      });
 
-        assertEquals(expected.encode(), actual.encode(), "Options retrival failed");
-    }
+    assertEquals(expected.encode(), actual.encode(), "Options retrival failed");
+  }
 
 }

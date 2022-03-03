@@ -214,6 +214,40 @@ class VertxExtensionTest {
       }
     }
 
+    @Nested
+    @ExtendWith(VertxExtension.class)
+    @DisplayName("🚫")
+    class TooMuchFlagging {
+
+      @Test
+      @Tag("programmatic")
+      void flagTooMuch(VertxTestContext testContext) {
+        Checkpoint checkpoint = testContext.checkpoint(3);
+        for (int i = 0; i < 10; i++) {
+          checkpoint.flag();
+        }
+      }
+    }
+
+    @Test
+    @DisplayName("⚙️ Check that too much flagging fails tests")
+    void checkTooMuchFlaggingFails() {
+      LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        .selectors(selectClass(EmbeddedWithARunner.TooMuchFlagging.class))
+        .build();
+      Launcher launcher = LauncherFactory.create();
+      SummaryGeneratingListener listener = new SummaryGeneratingListener();
+      launcher.registerTestExecutionListeners(listener);
+      launcher.execute(request);
+      TestExecutionSummary summary = listener.getSummary();
+      assertThat(summary.getTestsStartedCount()).isEqualTo(1);
+      assertThat(summary.getTestsFailedCount()).isEqualTo(1);
+      Throwable exception = summary.getFailures().get(0).getException();
+      assertThat(exception)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Strict checkpoint flagged too many times");
+    }
+
     @Test
     @DisplayName("⚙️ Check a timeout diagnosis")
     void checkTimeoutFailureTestWithIntermediateAsyncVerifier() {

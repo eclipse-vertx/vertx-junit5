@@ -50,6 +50,7 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   private Throwable throwableReference = null;
+  private boolean done = false;
   private final CountDownLatch releaseLatch = new CountDownLatch(1);
   private final HashSet<CountingCheckpoint> checkpoints = new HashSet<>();
 
@@ -79,7 +80,7 @@ public final class VertxTestContext {
    * @return {@code true} if the context has completed, {@code false} otherwise.
    */
   public synchronized boolean completed() {
-    return !failed() && releaseLatch.getCount() == 0;
+    return !failed() && (done || releaseLatch.getCount() == 0);
   }
 
   /**
@@ -101,6 +102,7 @@ public final class VertxTestContext {
    * Complete the test context immediately, making the corresponding test pass.
    */
   public synchronized void completeNow() {
+    done = true;
     releaseLatch.countDown();
   }
 
@@ -111,7 +113,7 @@ public final class VertxTestContext {
    */
   public synchronized void failNow(Throwable t) {
     Objects.requireNonNull(t, "The exception cannot be null");
-    if (!completed()) {
+    if (throwableReference == null) {
       throwableReference = t;
       releaseLatch.countDown();
     }
@@ -120,7 +122,7 @@ public final class VertxTestContext {
   /**
    * Calls {@link #failNow(Throwable)} with the {@code message}.
    *
-   * @param message  the cause of failure
+   * @param message the cause of failure
    */
   public synchronized void failNow(String message) {
     failNow(new NoStackTraceThrowable(message));
@@ -185,8 +187,8 @@ public final class VertxTestContext {
    * @param <T> the asynchronous result type.
    * @return the handler.
    * @deprecated Use {@link #succeedingThenComplete()} or {@link #succeeding(Handler)}, for example
-   *     <code>succeeding(value -> checkpoint.flag())</code>, <code>succeeding(value -> { more testing code })</code>, or
-   *     <code>succeeding(value -> {})</code>.
+   * <code>succeeding(value -> checkpoint.flag())</code>, <code>succeeding(value -> { more testing code })</code>, or
+   * <code>succeeding(value -> {})</code>.
    */
   @Deprecated
   public <T> Handler<AsyncResult<T>> succeeding() {
@@ -225,8 +227,8 @@ public final class VertxTestContext {
    * @param <T> the asynchronous result type.
    * @return the handler.
    * @deprecated Use {@link #failingThenComplete()} or {@link #failing(Handler)}, for example
-   *     <code>failing(e -> checkpoint.flag())</code>, <code>failing(e -> { more testing code })</code>, or
-   *     <code>failing(e -> {})</code>.
+   * <code>failing(e -> checkpoint.flag())</code>, <code>failing(e -> { more testing code })</code>, or
+   * <code>failing(e -> {})</code>.
    */
   @Deprecated
   public <T> Handler<AsyncResult<T>> failing() {

@@ -31,8 +31,8 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -243,7 +243,7 @@ public class Examples {
 
       @ParameterizedTest
       @MethodSource("testData")
-       void test2(String obj, int count, Vertx vertx, VertxTestContext testContext) {
+      void test2(String obj, int count, Vertx vertx, VertxTestContext testContext) {
         // your test code
         testContext.completeNow();
       }

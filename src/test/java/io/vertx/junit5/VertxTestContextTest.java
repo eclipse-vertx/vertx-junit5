@@ -18,8 +18,6 @@ package io.vertx.junit5;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-
 import io.vertx.core.impl.NoStackTraceThrowable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -251,16 +249,16 @@ class VertxTestContextTest {
   }
 
   @Test
-  @DisplayName("Check that failing an already completed context is not possible")
+  @DisplayName("Check that failing an already completed context is possible")
   void complete_then_fail() {
     VertxTestContext context = new VertxTestContext();
 
     context.completeNow();
     context.failNow(new IllegalStateException("Oh"));
 
-    assertThat(context.completed()).isTrue();
-    assertThat(context.failed()).isFalse();
-    assertThat(context.causeOfFailure()).isNull();
+    assertThat(context.completed()).isFalse();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure()).isInstanceOf(IllegalStateException.class).hasMessage("Oh");
   }
 
   @Test
@@ -312,8 +310,8 @@ class VertxTestContextTest {
     assertThat(context.completed()).isFalse();
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure())
-    .isInstanceOf(AssertionError.class)
-    .hasMessage("The asynchronous result was expected to have failed");
+      .isInstanceOf(AssertionError.class)
+      .hasMessage("The asynchronous result was expected to have failed");
   }
 
   @Test

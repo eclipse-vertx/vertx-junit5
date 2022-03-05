@@ -39,6 +39,7 @@ Here is a very basic usage:
 ----
 {@link examples.Examples.BTest}
 ----
+
 <1> {@link io.vertx.junit5.VertxTestContext#succeedingThenComplete} returns an asynchronous result handler that is expected to succeed and then make the test context pass.
 <2> {@link io.vertx.junit5.VertxTestContext#awaitCompletion} has the semantics of a `java.util.concurrent.CountDownLatch`, and returns `false` if the waiting delay expired before the test passed.
 <3> If the context captures a (potentially asynchronous) error, then after completion we must throw the failure exception to make the test fail.
@@ -98,7 +99,8 @@ The Vert.x integration is primarily done using the {@link io.vertx.junit5.VertxE
 {@link examples.Examples.CTest.SomeTest}
 ----
 
-NOTE: The `Vertx` instance is not clustered and has the default configuration. If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
+NOTE: The `Vertx` instance is not clustered and has the default configuration.
+If you need something else then just don't use injection on that parameter and prepare a `Vertx` object by yourself.
 
 The test is automatically wrapped around the {@link io.vertx.junit5.VertxTestContext} instance lifecycle, so you don't need to insert {@link io.vertx.junit5.VertxTestContext#awaitCompletion} calls yourself:
 
@@ -151,8 +153,10 @@ Generally-speaking, we respect the JUnit extension scoping rules, but here are t
 
 ==== Configuring `Vertx` instances
 
-By default the `Vertx` objects get created with `Vertx.vertx()`, using the default settings for `Vertx`. However you have the ability to configure `VertxOptions` to suit your needs.
-A typical use case would be "extending blocking timeout warning for debugging". To configure the `Vertx` object you must:
+By default the `Vertx` objects get created with `Vertx.vertx()`, using the default settings for `Vertx`.
+However you have the ability to configure `VertxOptions` to suit your needs.
+A typical use case would be "extending blocking timeout warning for debugging".
+To configure the `Vertx` object you must:
 
 1. create a json file with the `VertxOptions` in https://vertx.io/docs/apidocs/io/vertx/core/VertxOptions.html#VertxOptions-io.vertx.core.json.JsonObject-[json format]
 2. create an environment variable `vertx.parameter.filename` pointing to that file
@@ -183,7 +187,8 @@ JUnit 5 allows multiple methods to exist for the same lifecycle events.
 As an example, it is possible to define 3 `@BeforeEach` methods on the same test.
 Because of asynchronous operations it is possible that the effects of these methods happen concurrently rather than sequentially, which may lead to inconsistent states.
 
-This is a problem of JUnit 5 rather than this module. In case of doubt you may always wonder why a single method can't be better than many.
+This is a problem of JUnit 5 rather than this module.
+In case of doubt you may always wonder why a single method can't be better than many.
 
 == Support for additional parameter types
 
@@ -217,15 +222,15 @@ In any case it is a good idea to have the `Vertx` parameter first, and the next 
 
 == Parameterized tests with `@MethodSource`
 
-You can use parameterized tests with `@MethodSource` with vertx-junit5. Therefore you need to declare the method source parameters before the vertx test parameters in
-the method definition.
+You can use parameterized tests with `@MethodSource` with vertx-junit5. Therefore you need to declare the method source parameters before the vertx test parameters in the method definition.
 
 [source,java]
 ----
 {@link examples.Examples.PTest.SomeTest}
 ----
 
-The same holds for the other `ArgumentSources`. See the section `Formal Parameter List` in the API doc of
+The same holds for the other `ArgumentSources`.
+See the section `Formal Parameter List` in the API doc of
 https://junit.org/junit5/docs/current/api/org.junit.jupiter.params/org/junit/jupiter/params/ParameterizedTest.html[ParameterizedTest]
 
 == Running tests on a Vert.x context

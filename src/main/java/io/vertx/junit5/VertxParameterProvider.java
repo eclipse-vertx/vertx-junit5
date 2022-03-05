@@ -16,8 +16,12 @@
 
 package io.vertx.junit5;
 
-import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_DURATION;
-import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_UNIT;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,13 +33,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.json.JsonObject;
+import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_DURATION;
+import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_UNIT;
 
 public class VertxParameterProvider implements VertxExtensionParameterProvider<Vertx> {
 

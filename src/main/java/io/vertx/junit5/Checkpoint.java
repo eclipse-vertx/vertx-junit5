@@ -19,8 +19,8 @@ package io.vertx.junit5;
 /**
  * A test completion checkpoint, flagging it advances towards the test context completion.
  *
- * @see VertxTestContext
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ * @see VertxTestContext
  */
 public interface Checkpoint {
 

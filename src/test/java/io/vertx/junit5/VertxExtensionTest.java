@@ -264,7 +264,7 @@ class VertxExtensionTest {
       Throwable exception = summary.getFailures().get(0).getException();
       assertThat(exception)
         .isInstanceOf(TimeoutException.class)
-        .hasMessageContaining("checkpoint in file VertxExtensionTest.java");
+        .hasMessageContaining("checkpoint at io.vertx.junit5.VertxExtensionTest$EmbeddedWithARunner$TimingOut");
     }
   }
 

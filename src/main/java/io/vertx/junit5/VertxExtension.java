@@ -197,11 +197,10 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
           String message = "The test execution timed out. Make sure your asynchronous code "
             + "includes calls to either VertxTestContext#completeNow(), VertxTestContext#failNow() "
             + "or Checkpoint#flag()";
-          String unsatisfiedCheckpointsDiagnosis = context.unsatisfiedCheckpointCallSites()
+          message = message +  context.unsatisfiedCheckpointCallSites()
             .stream()
-            .map(element -> "-> checkpoint in file " + element.getFileName() + " line " + element.getLineNumber())
-            .collect(Collectors.joining("\n"));
-          message = message + "\n\nUnsatisfied checkpoints diagnostics:\n" + unsatisfiedCheckpointsDiagnosis;
+            .map(element -> String.format("-> checkpoint at %s", element))
+            .collect(Collectors.joining("\n", "\n\nUnsatisfied checkpoints diagnostics:\n", ""));
           throw new TimeoutException(message);
         }
       }

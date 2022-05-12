@@ -102,6 +102,7 @@ public final class VertxTestContext {
    * Complete the test context immediately, making the corresponding test pass.
    */
   public synchronized void completeNow() {
+    assertContextNotCompletedOrFailed();
     done = true;
     releaseLatch.countDown();
   }
@@ -113,6 +114,11 @@ public final class VertxTestContext {
    */
   public synchronized void failNow(Throwable t) {
     Objects.requireNonNull(t, "The exception cannot be null");
+
+    // Unsure on this, but don't want to prevent the overuse of a strict checkpoint's flag() failing the test with its own exception
+    if (!(t instanceof IllegalStateException)) {
+      assertContextNotCompletedOrFailed();
+    }
     if (throwableReference == null) {
       throwableReference = t;
       releaseLatch.countDown();
@@ -153,6 +159,7 @@ public final class VertxTestContext {
    * @return a checkpoint that requires several passes; more passes than the required number are allowed and ignored.
    */
   public synchronized Checkpoint laxCheckpoint(int requiredNumberOfPasses) {
+    assertContextNotCompletedOrFailed();
     CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     return checkpoint;
@@ -174,6 +181,7 @@ public final class VertxTestContext {
    * @return a checkpoint that requires several passes, but no more or it fails the context.
    */
   public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
+    assertContextNotCompletedOrFailed();
     CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointSatisfied, this::failNow, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     return checkpoint;
@@ -192,6 +200,7 @@ public final class VertxTestContext {
    */
   @Deprecated
   public <T> Handler<AsyncResult<T>> succeeding() {
+    assertContextNotCompletedOrFailed();
     return ar -> {
       if (!ar.succeeded()) {
         failNow(ar.cause());
@@ -207,6 +216,7 @@ public final class VertxTestContext {
    * @return the handler.
    */
   public <T> Handler<AsyncResult<T>> succeeding(Handler<T> nextHandler) {
+    assertContextNotCompletedOrFailed();
     Objects.requireNonNull(nextHandler, "The handler cannot be null");
     return ar -> {
       if (ar.failed()) {
@@ -232,6 +242,7 @@ public final class VertxTestContext {
    */
   @Deprecated
   public <T> Handler<AsyncResult<T>> failing() {
+    assertContextNotCompletedOrFailed();
     return ar -> {
       if (ar.succeeded()) {
         failNow(new AssertionError("The asynchronous result was expected to have failed"));
@@ -247,6 +258,7 @@ public final class VertxTestContext {
    * @return the handler.
    */
   public <T> Handler<AsyncResult<T>> failing(Handler<Throwable> nextHandler) {
+    assertContextNotCompletedOrFailed();
     Objects.requireNonNull(nextHandler, "The handler cannot be null");
     return ar -> {
       if (ar.succeeded()) {
@@ -268,6 +280,7 @@ public final class VertxTestContext {
    * @return the handler.
    */
   public <T> Handler<AsyncResult<T>> succeedingThenComplete() {
+    assertContextNotCompletedOrFailed();
     return ar -> {
       if (ar.succeeded()) {
         completeNow();
@@ -297,6 +310,7 @@ public final class VertxTestContext {
    * @return the handler.
    */
   public <T> Handler<AsyncResult<T>> failingThenComplete() {
+    assertContextNotCompletedOrFailed();
     return ar -> {
       if (ar.succeeded()) {
         failNow(new AssertionError("The asynchronous result was expected to have failed"));
@@ -317,6 +331,7 @@ public final class VertxTestContext {
    * @return a future with completion result
    */
   public <T> Future<T> assertComplete(Future<T> fut) {
+    assertContextNotCompletedOrFailed();
     Promise<T> newPromise = Promise.promise();
     fut.onComplete(ar -> {
       if (ar.succeeded()) {
@@ -339,6 +354,7 @@ public final class VertxTestContext {
    * @return a future with failure result
    */
   public <T> Future<T> assertFailure(Future<T> fut) {
+    assertContextNotCompletedOrFailed();
     Promise<T> newPromise = Promise.promise();
     fut.onComplete(ar -> {
       if (ar.succeeded()) {
@@ -365,6 +381,7 @@ public final class VertxTestContext {
    * @return this context.
    */
   public VertxTestContext verify(ExecutionBlock block) {
+    assertContextNotCompletedOrFailed();
     Objects.requireNonNull(block, "The block cannot be null");
     try {
       block.apply();
@@ -392,4 +409,18 @@ public final class VertxTestContext {
   }
 
   // ........................................................................................... //
+
+  /**
+   * If the context has already been completed or failed, then throw an exception to prevent code under test from
+   * not being properly tested
+   * @throws IllegalStateException if the context is completed or failed
+   */
+  private void assertContextNotCompletedOrFailed() throws IllegalStateException {
+    if (failed() || completed()) {
+      String errorMessage = "Vert.x test context has already succeeded or failed. This can occur when a checkpoint is flagged " +
+        "earlier in your test, or completeNow or failNow were called. If you're using multiple checkpoints, ensure that you " +
+        "create them upfront before flagging them";
+      throw new IllegalStateException(errorMessage);
+    }
+  }
 }

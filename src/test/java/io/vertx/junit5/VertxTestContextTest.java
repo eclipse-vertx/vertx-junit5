@@ -19,6 +19,7 @@ package io.vertx.junit5;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.NoStackTraceThrowable;
+import org.assertj.core.api.ThrowableTypeAssert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
@@ -335,10 +337,7 @@ class VertxTestContextTest {
     VertxTestContext context = new VertxTestContext();
     context
       .assertComplete(Future.succeededFuture("bla"))
-      .compose(s -> context.assertComplete(Future.failedFuture(new IllegalStateException(s + "bla"))))
-      .onComplete(context.succeeding(res -> {
-        context.completeNow();
-      }));
+      .compose(s -> context.assertComplete(Future.failedFuture(new IllegalStateException(s + "bla"))));
     assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
     assertThat(context.completed()).isFalse();
     assertThat(context.failed()).isTrue();
@@ -373,10 +372,7 @@ class VertxTestContextTest {
     context
       .assertComplete(Future.succeededFuture("bla")
         .compose(s -> Future.failedFuture(new IllegalStateException(s + "bla")))
-      )
-      .onComplete(context.succeeding(res -> {
-        context.completeNow();
-      }));
+      );
     assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
     assertThat(context.completed()).isFalse();
     assertThat(context.failed()).isTrue();
@@ -410,10 +406,7 @@ class VertxTestContextTest {
     VertxTestContext context = new VertxTestContext();
     context
       .assertFailure(Future.failedFuture(new IllegalStateException("bla")))
-      .recover(s -> context.assertFailure(Future.succeededFuture(s.getMessage() + "bla")))
-      .onComplete(context.succeeding(res -> {
-        context.completeNow();
-      }));
+      .recover(s -> context.assertFailure(Future.succeededFuture(s.getMessage() + "bla")));
     assertThat(context.awaitCompletion(1, TimeUnit.SECONDS)).isTrue();
     assertThat(context.completed()).isFalse();
     assertThat(context.failed()).isTrue();
@@ -466,5 +459,41 @@ class VertxTestContextTest {
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure()).isInstanceOf(NoStackTraceThrowable.class);
     assertThat(context.causeOfFailure()).hasMessage("error message");
+  }
+
+  @Test
+  @DisplayName("Check that creating new checkpoints or succeeding/failing blocks etc. fails if the context has already been completed or failed")
+  void check_finished_context_throws_exception_on_further_use() {
+    VertxTestContext context = new VertxTestContext();
+    Checkpoint checkpoint = context.checkpoint();
+
+    // Completes the context;
+    checkpoint.flag();
+
+    ThrowableTypeAssert<IllegalStateException> illegalStateException = assertThatExceptionOfType(IllegalStateException.class);
+    illegalStateException.isThrownBy(context::checkpoint);
+    illegalStateException.isThrownBy(context::laxCheckpoint);
+    illegalStateException.isThrownBy(context::succeedingThenComplete);
+    illegalStateException.isThrownBy(context::failingThenComplete);
+    illegalStateException.isThrownBy(context::completeNow);
+    illegalStateException.isThrownBy(() -> context.failNow("X"));
+    illegalStateException.isThrownBy(() -> context.failNow(new Throwable()));
+    illegalStateException.isThrownBy(() -> context.succeeding(null));
+    illegalStateException.isThrownBy(() -> context.failing(null));
+  }
+
+  @Test
+  @DisplayName("Verify that context completion assertion doesn't interfere with strict checkpoint double flagging exception")
+  void check_double_flagging_strict_checkpoint_fails_with_own_illegal_state_exception() {
+    VertxTestContext context = new VertxTestContext();
+    Checkpoint checkpoint = context.checkpoint();
+
+    // Completes the context;
+    checkpoint.flag();
+
+    checkpoint.flag();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure()).isInstanceOf(IllegalStateException.class);
+    assertThat(context.causeOfFailure()).hasMessage("Strict checkpoint flagged too many times");
   }
 }

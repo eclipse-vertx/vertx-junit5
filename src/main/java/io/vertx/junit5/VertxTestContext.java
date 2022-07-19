@@ -115,9 +115,8 @@ public final class VertxTestContext {
   public synchronized void failNow(Throwable t) {
     Objects.requireNonNull(t, "The exception cannot be null");
 
-    // Unsure on this, but don't want to prevent the overuse of a strict checkpoint's flag() failing the test with its own exception
-    if (!(t instanceof IllegalStateException)) {
-      assertContextNotCompletedOrFailed();
+    if (!(t instanceof CheckpointFlagOverUseException)) {
+      assertContextNotFailed();
     }
     if (throwableReference == null) {
       throwableReference = t;
@@ -331,7 +330,6 @@ public final class VertxTestContext {
    * @return a future with completion result
    */
   public <T> Future<T> assertComplete(Future<T> fut) {
-    assertContextNotCompletedOrFailed();
     Promise<T> newPromise = Promise.promise();
     fut.onComplete(ar -> {
       if (ar.succeeded()) {
@@ -354,7 +352,6 @@ public final class VertxTestContext {
    * @return a future with failure result
    */
   public <T> Future<T> assertFailure(Future<T> fut) {
-    assertContextNotCompletedOrFailed();
     Promise<T> newPromise = Promise.promise();
     fut.onComplete(ar -> {
       if (ar.succeeded()) {
@@ -416,10 +413,18 @@ public final class VertxTestContext {
    * @throws IllegalStateException if the context is completed or failed
    */
   private void assertContextNotCompletedOrFailed() throws IllegalStateException {
-    if (failed() || completed()) {
+    throwIfContextFinish(failed() || completed());
+  }
+
+  private void assertContextNotFailed() throws IllegalStateException {
+    throwIfContextFinish(failed());
+  }
+
+  private void throwIfContextFinish(boolean shouldThrow) throws IllegalStateException {
+    if (shouldThrow) {
       String errorMessage = "Vert.x test context has already succeeded or failed. This can occur when a checkpoint is flagged " +
         "earlier in your test, or completeNow or failNow were called. If you're using multiple checkpoints, ensure that you " +
-        "create them upfront before flagging them";
+        "create them all before flagging any.";
       throw new IllegalStateException(errorMessage);
     }
   }

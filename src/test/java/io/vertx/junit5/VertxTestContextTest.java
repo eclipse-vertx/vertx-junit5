@@ -476,8 +476,6 @@ class VertxTestContextTest {
     illegalStateException.isThrownBy(context::succeedingThenComplete);
     illegalStateException.isThrownBy(context::failingThenComplete);
     illegalStateException.isThrownBy(context::completeNow);
-    illegalStateException.isThrownBy(() -> context.failNow("X"));
-    illegalStateException.isThrownBy(() -> context.failNow(new Throwable()));
     illegalStateException.isThrownBy(() -> context.succeeding(null));
     illegalStateException.isThrownBy(() -> context.failing(null));
   }
@@ -493,7 +491,7 @@ class VertxTestContextTest {
 
     checkpoint.flag();
     assertThat(context.failed()).isTrue();
-    assertThat(context.causeOfFailure()).isInstanceOf(IllegalStateException.class);
+    assertThat(context.causeOfFailure()).isInstanceOf(CheckpointFlagOverUseException.class);
     assertThat(context.causeOfFailure()).hasMessage("Strict checkpoint flagged too many times");
   }
 }

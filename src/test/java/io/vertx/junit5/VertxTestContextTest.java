@@ -476,6 +476,7 @@ class VertxTestContextTest {
     illegalStateException.isThrownBy(context::succeedingThenComplete);
     illegalStateException.isThrownBy(context::failingThenComplete);
     illegalStateException.isThrownBy(context::completeNow);
+    illegalStateException.isThrownBy(() -> context.verify(() -> {}));
     illegalStateException.isThrownBy(() -> context.succeeding(null));
     illegalStateException.isThrownBy(() -> context.failing(null));
   }

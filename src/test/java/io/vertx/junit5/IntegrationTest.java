@@ -114,8 +114,8 @@ class IntegrationTest {
       Checkpoint responsesReceived = testContext.checkpoint(10);
 
       vertx.createHttpServer()
-        .requestHandler(req -> {
-          req.response().end("Ok");
+        .requestHandler(serverRequest -> {
+          serverRequest.response().end("Ok");
           requestsServed.flag();
         })
         .listen(8080, ar -> {
@@ -123,19 +123,18 @@ class IntegrationTest {
             testContext.failNow(ar.cause());
           } else {
             serverStarted.flag();
+            HttpClient client = vertx.createHttpClient();
+            for (int i = 0; i < 10; i++) {
+              client.request(HttpMethod.GET, 8080, "localhost", "/")
+                .flatMap(clientRequest -> clientRequest.send().compose(HttpClientResponse::body))
+                .onFailure(testContext::failNow)
+                .onSuccess(buffer -> {
+                  testContext.verify(() -> assertThat(buffer.toString()).isEqualTo("Ok"));
+                  responsesReceived.flag();
+                });
+            }
           }
         });
-
-      HttpClient client = vertx.createHttpClient();
-      for (int i = 0; i < 10; i++) {
-        client.request(HttpMethod.GET, 8080, "localhost", "/")
-          .flatMap(req -> req.send().compose(HttpClientResponse::body))
-          .onFailure(testContext::failNow)
-          .onSuccess(buffer -> {
-            testContext.verify(() -> assertThat(buffer.toString()).isEqualTo("Ok"));
-            responsesReceived.flag();
-          });
-      }
     }
   }
 }

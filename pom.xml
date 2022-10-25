@@ -39,7 +39,7 @@
       
     <artifactId>vertx-junit5-parent</artifactId>
       
-    <version>3.9.14</version>
+    <version>3.9.15-SNAPSHOT</version>
       
     <name>Vert.x JUnit 5 support :: Parent</name>
       
@@ -47,7 +47,7 @@
             
         <doc.skip>true</doc.skip>
             
-        <stack.version>3.9.14</stack.version>
+        <stack.version>3.9.15-SNAPSHOT</stack.version>
             
         <junit-jupiter.version>5.7.0</junit-jupiter.version>
             

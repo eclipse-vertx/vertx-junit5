@@ -153,13 +153,15 @@ Generally-speaking, we respect the JUnit extension scoping rules, but here are t
 
 ==== Configuring `Vertx` instances
 
-By default the `Vertx` objects get created with `Vertx.vertx()`, using the default settings for `Vertx`.
-However you have the ability to configure `VertxOptions` to suit your needs.
+By default, the `Vertx` objects get created with `Vertx.vertx()`, using the default settings for `Vertx`.
+However, you have the ability to configure `VertxOptions` to suit your needs.
 A typical use case would be "extending blocking timeout warning for debugging".
 To configure the `Vertx` object you must:
 
 1. create a json file with the `VertxOptions` in https://vertx.io/docs/apidocs/io/vertx/core/VertxOptions.html#VertxOptions-io.vertx.core.json.JsonObject-[json format]
-2. create an environment variable `vertx.parameter.filename` pointing to that file
+2. create an environment variable `VERTX_PARAMETER_FILENAME`, or a system property `vertx.parameter.filename`, pointing to that file
+
+TIP: The environment variable value takes precedence over the system property value, if both are present.
 
 Example file content for extended timeouts:
 

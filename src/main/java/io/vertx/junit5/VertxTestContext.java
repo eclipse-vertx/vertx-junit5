@@ -153,6 +153,9 @@ public final class VertxTestContext {
    * @return a checkpoint that requires several passes; more passes than the required number are allowed and ignored.
    */
   public synchronized Checkpoint laxCheckpoint(int requiredNumberOfPasses) {
+    if (done) {
+      throw new IllegalStateException("Context has already been completed");
+    }
     CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     return checkpoint;
@@ -171,9 +174,12 @@ public final class VertxTestContext {
    * Create a strict checkpoint.
    *
    * @param requiredNumberOfPasses the required number of passes to validate the checkpoint.
-   * @return a checkpoint that requires several passes, but no more or it fails the context.
+   * @return a checkpoint that requires several passes, but no more, or it fails the context.
    */
   public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
+    if (done) {
+      throw new IllegalStateException("Context has already been completed");
+    }
     CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointSatisfied, this::failNow, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     return checkpoint;

@@ -19,26 +19,36 @@ package io.vertx.junit5;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
-import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_DURATION;
-import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT_UNIT;
+import static io.vertx.junit5.VertxExtension.*;
 
 public class VertxParameterProvider implements VertxExtensionParameterProvider<Vertx> {
 
-  public static final String VERTX_PARAMETER_FILENAME = "vertx.parameter.filename";
+  private static final Logger LOG = LoggerFactory.getLogger(VertxParameterProvider.class);
+
+  // Visible for testing
+  static final String VERTX_PARAMETER_FILENAME = "vertx.parameter.filename";
+  static final String VERTX_PARAMETER_FILENAME_ENV_VAR = "VERTX_PARAMETER_FILENAME";
+  static final String VERTX_PARAMETER_FILENAME_SYS_PROP = "vertx.parameter.filename";
+
+  private static final String DEPRECATION_WARNING = String.format(
+    "'%s' environment variable is deprecated and will be removed in a future version, use '%s' instead",
+    VERTX_PARAMETER_FILENAME,
+    VERTX_PARAMETER_FILENAME_ENV_VAR
+  );
 
   @Override
   public Class<Vertx> type() {
@@ -84,17 +94,25 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
   }
 
   public JsonObject getVertxOptions() {
-    final JsonObject parameters = new JsonObject();
-    final String optionFileName = System.getenv(VERTX_PARAMETER_FILENAME);
-    if (optionFileName != null) {
-      Path path = Paths.get(optionFileName);
-      try {
-        final String read = Files.readAllLines(path, StandardCharsets.UTF_8).stream().collect(Collectors.joining("\n"));
-        parameters.mergeIn(new JsonObject(read));
-      } catch (IOException e) {
-        // Silently swallowing the error
+    String optionFileName = System.getenv(VERTX_PARAMETER_FILENAME_ENV_VAR);
+    if (optionFileName == null) {
+      optionFileName = System.getProperty(VERTX_PARAMETER_FILENAME_SYS_PROP);
+      if (optionFileName == null) {
+        optionFileName = System.getenv(VERTX_PARAMETER_FILENAME);
+        if (optionFileName != null) {
+          LOG.warn(DEPRECATION_WARNING);
+        } else {
+          return new JsonObject();
+        }
       }
     }
-    return parameters;
+    try {
+      Path path = Paths.get(optionFileName);
+      Buffer content = Buffer.buffer(Files.readAllBytes(path));
+      return new JsonObject(content);
+    } catch (Exception e) {
+      LOG.warn("Failure when reading Vert.x options file, will use default options", e);
+      return new JsonObject();
+    }
   }
 }

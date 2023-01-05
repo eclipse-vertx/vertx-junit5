@@ -19,13 +19,14 @@ package io.vertx.junit5;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.github.stefanbirkner.systemlambda.SystemLambda.*;
+import static io.vertx.junit5.VertxParameterProvider.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author <a href="https://wissel.net/">Stephan Wisssel</a>
@@ -33,50 +34,90 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisplayName("Test of VertxParameterProvider")
 public class VertxParameterProviderTest {
 
+  VertxParameterProvider provider = new VertxParameterProvider();
+  JsonObject expected = new JsonObject();
+  JsonObject actual = new JsonObject();
+
   @Test
   @DisplayName("Default case - empty VertxOptions")
   void default_empty_options() {
-    VertxParameterProvider provider = new VertxParameterProvider();
-    JsonObject expected = new JsonObject();
-    JsonObject actual = provider.getVertxOptions();
+    actual.mergeIn(provider.getVertxOptions());
     assertEquals(expected.encode(), actual.encode(), "Options should be equally empty but are not");
   }
 
   @Test
-  @DisplayName("Failed retrieval of options")
-  void failed_retrieval_of_options() throws Exception {
-    VertxParameterProvider provider = new VertxParameterProvider();
-    final JsonObject expected = new JsonObject();
-    final JsonObject actual = new JsonObject();
-
-    withEnvironmentVariable(VertxParameterProvider.VERTX_PARAMETER_FILENAME, "something.that.does.not.exist.json")
-      .execute(() -> {
-        actual.mergeIn(provider.getVertxOptions());
-      });
-
-    assertEquals(expected.encode(), actual.encode(), "Options retrival failure not handled");
+  @DisplayName("Failed retrieval of options - env var")
+  void failed_retrieval_of_options_env_var() throws Exception {
+    failure(true, false);
   }
 
   @Test
-  @DisplayName("Retrieval of options")
-  void retrieval_of_options() throws Exception {
-    VertxParameterProvider provider = new VertxParameterProvider();
-    final JsonObject expected = new JsonObject().put("BlockedThreadCheckInterval", 120).put("MaxWorkerExecuteTime",
-      42);
-    final JsonObject actual = new JsonObject();
-    // Create a temp file and populate it with our expected values
-    File tempOptionFile = File.createTempFile("VertxOptions-", ".json");
-    tempOptionFile.deleteOnExit();
-    BufferedWriter writer = new BufferedWriter(new FileWriter(tempOptionFile.getAbsolutePath()));
-    writer.write(expected.encode());
-    writer.close();
-
-    withEnvironmentVariable(VertxParameterProvider.VERTX_PARAMETER_FILENAME, tempOptionFile.getAbsolutePath())
-      .execute(() -> {
-        actual.mergeIn(provider.getVertxOptions());
-      });
-
-    assertEquals(expected.encode(), actual.encode(), "Options retrival failed");
+  @DisplayName("Failed retrieval of options - old env var")
+  void failed_retrieval_of_options_old_env_var() throws Exception {
+    failure(true, true);
   }
 
+  @Test
+  @DisplayName("Failed retrieval of options - sys prop")
+  void failed_retrieval_of_options_sys_prop() throws Exception {
+    failure(false, false);
+  }
+
+  private void failure(boolean useEnv, boolean oldEnv) throws Exception {
+    String doesNotExist = "something.that.does.not.exist.json";
+    if (useEnv) {
+      String var = oldEnv ? VERTX_PARAMETER_FILENAME : VERTX_PARAMETER_FILENAME_ENV_VAR;
+      withEnvironmentVariable(var, doesNotExist).execute(() -> {
+        actual.mergeIn(provider.getVertxOptions());
+      });
+    } else {
+      restoreSystemProperties(() -> {
+        System.setProperty(VertxParameterProvider.VERTX_PARAMETER_FILENAME_SYS_PROP, doesNotExist);
+        actual.mergeIn(provider.getVertxOptions());
+      });
+    }
+    assertEquals(expected.encode(), actual.encode(), "Options retrieval failure not handled");
+  }
+
+  @Test
+  @DisplayName("Retrieval of options - env var")
+  void retrieval_of_options_env_var(@TempDir Path tempDir) throws Exception {
+    success(tempDir, true, false);
+  }
+
+  @Test
+  @DisplayName("Retrieval of options - old env var")
+  void retrieval_of_options_old_env_var(@TempDir Path tempDir) throws Exception {
+    success(tempDir, true, true);
+  }
+
+  @Test
+  @DisplayName("Retrieval of options - sys prop")
+  void retrieval_of_options_sys_prop(@TempDir Path tempDir) throws Exception {
+    success(tempDir, false, false);
+  }
+
+  private void success(Path tempDir, boolean useEnv, boolean oldEnv) throws Exception {
+    expected.mergeIn(new JsonObject()
+      .put("BlockedThreadCheckInterval", 120)
+      .put("MaxWorkerExecuteTime", 42));
+
+    // Create a temp file and populate it with our expected values
+    Path tempOptionFile = tempDir.resolve("VertxOptions.json").toAbsolutePath();
+    Files.write(tempOptionFile, expected.toBuffer().getBytes());
+
+    if (useEnv) {
+      String var = oldEnv ? VERTX_PARAMETER_FILENAME : VERTX_PARAMETER_FILENAME_ENV_VAR;
+      withEnvironmentVariable(var, tempOptionFile.toString()).execute(() -> {
+        actual.mergeIn(provider.getVertxOptions());
+      });
+    } else {
+      restoreSystemProperties(() -> {
+        System.setProperty(VERTX_PARAMETER_FILENAME_SYS_PROP, tempOptionFile.toString());
+        actual.mergeIn(provider.getVertxOptions());
+      });
+    }
+
+    assertEquals(expected.encode(), actual.encode(), "Options retrieval failed");
+  }
 }

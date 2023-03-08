@@ -1,4 +1,5 @@
-[![Build Status](https://github.com/vert-x3/vertx-junit5/workflows/CI/badge.svg?branch=master)](https://github.com/vert-x3/vertx-junit5/actions?query=workflow%3ACI)
+[![Build Status (5.x)](https://github.com/eclipse-vertx/vertx-junit5/actions/workflows/ci-5.x.yml/badge.svg)](https://github.com/eclipse-vertx/vertx-junit5/actions/workflows/ci-5.x.yml)
+[![Build Status (4.x)](https://github.com/eclipse-vertx/vertx-junit5/actions/workflows/ci-4.x.yml/badge.svg)](https://github.com/eclipse-vertx/vertx-codegen/actions/workflows/ci-4.x.yml)
 
 # Vert.x JUnit 5 integration
 

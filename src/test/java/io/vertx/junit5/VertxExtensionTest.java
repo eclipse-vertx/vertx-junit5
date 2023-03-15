@@ -190,14 +190,14 @@ class VertxExtensionTest {
       @Test
       @Tag("programmatic")
       void thisMustAlsoFail(Vertx vertx, VertxTestContext testContext) {
-        vertx.executeBlocking(f -> {
+        vertx.<Integer>executeBlocking(f -> {
           try {
             Thread.sleep(500);
           } catch (InterruptedException e) {
             e.printStackTrace();
           }
           f.complete(69);
-        }, testContext.succeeding(i -> testContext.verify(() -> assertEquals(58, i))));
+        }).onComplete(testContext.succeeding(i -> testContext.verify(() -> assertEquals(58, i))));
       }
     }
 
@@ -285,7 +285,7 @@ class VertxExtensionTest {
       previousTestContext = testContext;
       assertThat(currentVertx).isNotSameAs(vertx);
       currentVertx = vertx;
-      vertx.deployVerticle(new UselessVerticle(), testContext.succeeding(id -> testContext.completeNow()));
+      vertx.deployVerticle(new UselessVerticle()).onComplete(testContext.succeeding(id -> testContext.completeNow()));
     }
 
     @AfterEach
@@ -293,7 +293,7 @@ class VertxExtensionTest {
       assertThat(testContext).isNotSameAs(previousTestContext);
       previousTestContext = testContext;
       assertThat(vertx.deploymentIDs()).isNotEmpty().hasSize(1);
-      vertx.close(testContext.succeeding(v -> testContext.completeNow()));
+      vertx.close().onComplete(testContext.succeeding(v -> testContext.completeNow()));
     }
 
     @RepeatedTest(10)

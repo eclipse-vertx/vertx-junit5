@@ -53,7 +53,7 @@ public class Examples {
     void start_server() {
       vertx.createHttpServer()
         .requestHandler(req -> req.response().end("Ok"))
-        .listen(16969, ar -> {
+        .listen(16969).onComplete(ar -> {
           // (we can check here if the server started or not)
         });
     }
@@ -99,7 +99,7 @@ public class Examples {
   void startPlopServer(Vertx vertx, VertxTestContext testContext) {
     vertx.createHttpServer()
       .requestHandler(request -> request.response().end("Plop"))
-      .listen(8080, testContext.succeedingThenComplete());
+      .listen(8080).onComplete(testContext.succeedingThenComplete());
   }
 
   @Test
@@ -163,7 +163,7 @@ public class Examples {
 
       @Test
       void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
-        vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
+        vertx.deployVerticle(new HttpServerVerticle()).onComplete(testContext.succeeding(id -> {
           HttpClient client = vertx.createHttpClient();
           client.request(HttpMethod.GET, 8080, "localhost", "/")
             .compose(req -> req.send().compose(HttpClientResponse::body))
@@ -192,7 +192,7 @@ public class Examples {
       // is successfully deployed
       @BeforeEach
       void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
-        vertx.deployVerticle(new HttpServerVerticle(), testContext.succeedingThenComplete());
+        vertx.deployVerticle(new HttpServerVerticle()).onComplete(testContext.succeedingThenComplete());
       }
 
       // Repeat this test 3 times

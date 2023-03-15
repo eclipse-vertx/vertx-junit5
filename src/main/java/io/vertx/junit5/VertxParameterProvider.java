@@ -73,7 +73,7 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
     return vertx -> {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Throwable> errorBox = new AtomicReference<>();
-      vertx.close(ar -> {
+      vertx.close().onComplete(ar -> {
         if (ar.failed()) {
           errorBox.set(ar.cause());
         }

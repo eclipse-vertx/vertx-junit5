@@ -44,7 +44,7 @@ class IntegrationTest {
     public void start(Promise<Void> startFuture) throws Exception {
       vertx.createHttpServer()
         .requestHandler(request -> request.response().end("Plop"))
-        .listen(8080, ar -> {
+        .listen(8080).onComplete(ar -> {
           if (ar.succeeded()) {
             startFuture.complete();
           } else {
@@ -66,7 +66,7 @@ class IntegrationTest {
       Vertx vertx = Vertx.vertx();
       vertx.createHttpServer()
         .requestHandler(req -> req.response().end())
-        .listen(16969, testContext.succeeding(ar -> testContext.completeNow()));
+        .listen(16969).onComplete(testContext.succeeding(ar -> testContext.completeNow()));
 
       assertThat(testContext.awaitCompletion(5, TimeUnit.SECONDS)).isTrue();
       closeVertx(vertx);
@@ -78,7 +78,7 @@ class IntegrationTest {
       Vertx vertx = Vertx.vertx();
       VertxTestContext testContext = new VertxTestContext();
 
-      vertx.deployVerticle(new HttpServerVerticle(), testContext.succeeding(id -> {
+      vertx.deployVerticle(new HttpServerVerticle()).onComplete(testContext.succeeding(id -> {
         HttpClient client = vertx.createHttpClient();
         client.request(HttpMethod.GET, 8080, "localhost", "/")
           .flatMap(req -> req.send().compose(HttpClientResponse::body))
@@ -95,7 +95,7 @@ class IntegrationTest {
 
     private void closeVertx(Vertx vertx) throws InterruptedException {
       CountDownLatch latch = new CountDownLatch(1);
-      vertx.close(ar -> latch.countDown());
+      vertx.close().onComplete(ar -> latch.countDown());
       assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
     }
   }
@@ -118,7 +118,7 @@ class IntegrationTest {
           serverRequest.response().end("Ok");
           requestsServed.flag();
         })
-        .listen(8080, ar -> {
+        .listen(8080).onComplete(ar -> {
           if (ar.failed()) {
             testContext.failNow(ar.cause());
           } else {

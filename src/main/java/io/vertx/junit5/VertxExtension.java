@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2018 Red Hat, Inc.
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
 package io.vertx.junit5;
@@ -38,14 +33,14 @@ import java.util.stream.Collectors;
  * <ul>
  * <li>{@link Vertx}</li>
  * <li>{@link VertxTestContext}</li>
- * <li>{@link io.vertx.rxjava.core.Vertx}</li>
- * <li>{@link io.vertx.reactivex.core.Vertx}</li>
- * <li>{@link io.vertx.rxjava3.core.Vertx}</li>
+ * <li>{@code io.vertx.rxjava.core.Vertx}</li>
+ * <li>{@code io.vertx.reactivex.core.Vertx}</li>
+ * <li>{@code io.vertx.rxjava3.core.Vertx}</li>
  * </ul>
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-public final class VertxExtension implements ParameterResolver, BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeEachCallback, AfterEachCallback, BeforeAllCallback, AfterAllCallback {
+public final class VertxExtension implements ParameterResolver, InvocationInterceptor {
 
   /**
    * Default timeout.
@@ -130,38 +125,45 @@ public final class VertxExtension implements ParameterResolver, BeforeTestExecut
   }
 
   @Override
-  public void beforeAll(ExtensionContext context) throws Exception {
-    // Not much we can do here ATM
+  public void interceptBeforeAllMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    invocation.proceed();
+    joinActiveTestContexts(extensionContext);
   }
 
   @Override
-  public void afterAll(ExtensionContext context) throws Exception {
-    // We may wait on test contexts from @AfterAll methods
-    joinActiveTestContexts(context);
+  public void interceptAfterAllMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    invocation.proceed();
+    joinActiveTestContexts(extensionContext);
   }
 
   @Override
-  public void beforeEach(ExtensionContext context) throws Exception {
-    // We may wait on test contexts from @BeforeAll methods
-    joinActiveTestContexts(context);
+  public void interceptTestMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    invocation.proceed();
+    joinActiveTestContexts(extensionContext);
   }
 
   @Override
-  public void afterEach(ExtensionContext context) throws Exception {
-    // We may wait on test contexts from @AfterEach methods
-    joinActiveTestContexts(context);
+  public void interceptBeforeEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    invocation.proceed();
+    joinActiveTestContexts(extensionContext);
   }
 
   @Override
-  public void beforeTestExecution(ExtensionContext context) throws Exception {
-    // We may wait on test contexts from @BeforeEach methods
-    joinActiveTestContexts(context);
+  public void interceptTestTemplateMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    invocation.proceed();
+    joinActiveTestContexts(extensionContext);
   }
 
   @Override
-  public void afterTestExecution(ExtensionContext context) throws Exception {
-    // We may wait on the test context from a test
-    joinActiveTestContexts(context);
+  public void interceptDynamicTest(Invocation<Void> invocation, DynamicTestInvocationContext invocationContext, ExtensionContext extensionContext) throws Throwable {
+    invocation.proceed();
+    joinActiveTestContexts(extensionContext);
+  }
+
+  @Override
+  public void interceptAfterEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    invocation.proceed();
+    joinActiveTestContexts(extensionContext);
   }
 
   private void joinActiveTestContexts(ExtensionContext extensionContext) throws Exception {

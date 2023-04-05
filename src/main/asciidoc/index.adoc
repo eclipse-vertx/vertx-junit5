@@ -182,16 +182,6 @@ Injected `Vertx` objects are being automatically closed and removed from their c
 For instance if a `Vertx` object is created for the scope of a test method, it is being closed after the test completes.
 Similarly, when it is being created by a `@BeforeEach` method, it is being closed after possible `@AfterEach` methods have completed.
 
-==== Warning on multiple methods for the same lifecycle events
-
-JUnit 5 allows multiple methods to exist for the same lifecycle events.
-
-As an example, it is possible to define 3 `@BeforeEach` methods on the same test.
-Because of asynchronous operations it is possible that the effects of these methods happen concurrently rather than sequentially, which may lead to inconsistent states.
-
-This is a problem of JUnit 5 rather than this module.
-In case of doubt you may always wonder why a single method can't be better than many.
-
 == Support for additional parameter types
 
 The Vert.x JUnit 5 extension is extensible: you can add more types through the

@@ -1,17 +1,12 @@
 /*
- * Copyright (c) 2018 Red Hat, Inc.
+ * Copyright (c) 2011-2023 Contributors to the Eclipse Foundation
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 package io.vertx.junit5;
 
@@ -21,44 +16,41 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(VertxExtension.class)
 @DisplayName("Test multiple @BeforeEach methods")
 class AsyncBeforeEachTest {
 
-  private boolean started1;
-  private boolean started2;
+  private final AtomicBoolean started1 = new AtomicBoolean();
+  private final AtomicBoolean started2 = new AtomicBoolean();
   private final AtomicInteger count = new AtomicInteger();
 
   @BeforeEach
   void before1(VertxTestContext context, Vertx vertx) {
-    int c = count.get();
-    boolean s = started2;
-    if (c == 1) {
-      assertTrue(s);
-    }
-    Checkpoint checkpoint = context.checkpoint();
-    vertx.setTimer(20, id -> {
-      started1 = true;
-      count.incrementAndGet();
-      checkpoint.flag();
-    });
+    checkBeforeMethod(context, vertx, started1, started2);
   }
 
   @BeforeEach
   void before2(VertxTestContext context, Vertx vertx) {
+    checkBeforeMethod(context, vertx, started2, started1);
+  }
+
+  private void checkBeforeMethod(VertxTestContext context, Vertx vertx, AtomicBoolean mine, AtomicBoolean other) {
     int c = count.get();
-    boolean s = started1;
-    if (c == 1) {
-      assertTrue(s);
+    if (c == 0) {
+      assertFalse(mine.get());
+      assertFalse(other.get());
+    } else if (c == 1) {
+      assertFalse(mine.get());
+      assertTrue(other.get());
     }
     Checkpoint checkpoint = context.checkpoint();
     vertx.setTimer(20, id -> {
-      started2 = true;
+      mine.set(true);
       count.incrementAndGet();
       checkpoint.flag();
     });
@@ -67,7 +59,7 @@ class AsyncBeforeEachTest {
   @RepeatedTest(10)
   void check_async_before_completed() {
     assertEquals(2, count.get());
-    assertTrue(started1);
-    assertTrue(started2);
+    assertTrue(started1.get());
+    assertTrue(started2.get());
   }
 }

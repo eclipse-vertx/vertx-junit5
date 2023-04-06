@@ -3,7 +3,7 @@ package io.vertx.junit5;
 import org.junit.jupiter.api.Assertions;
 
 /** VertxAssertions */
-public class VertxAssertions {
+public interface VertxAssertions {
 
   public static <T> void assertEquals(VertxTestContext testContext, T expected, T actual) {
     try {

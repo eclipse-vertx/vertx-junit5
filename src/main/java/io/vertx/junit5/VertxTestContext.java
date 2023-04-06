@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-public final class VertxTestContext {
+public final class VertxTestContext implements VertxAssertions {
 
   /**
    * Interface for an executable block of assertion code.

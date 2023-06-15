@@ -31,9 +31,9 @@
   <properties>
     <doc.skip>false</doc.skip>
     <stack.version>5.0.0-SNAPSHOT</stack.version>
-    <junit-jupiter.version>5.8.2</junit-jupiter.version>
+    <junit-jupiter.version>5.9.3</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
-    <assertj-core.version>3.21.0</assertj-core.version>
+    <assertj-core.version>3.24.2</assertj-core.version>
     <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
     <system-lamda.version>1.2.0</system-lamda.version>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>

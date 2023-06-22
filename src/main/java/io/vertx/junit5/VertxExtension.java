@@ -12,6 +12,7 @@
 package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
@@ -181,10 +182,19 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
           Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
           timeoutDuration = annotation.value();
           timeoutUnit = annotation.timeUnit();
-        } else if (extensionContext.getRequiredTestClass().isAnnotationPresent(Timeout.class)) {
-          Timeout annotation = extensionContext.getRequiredTestClass().getAnnotation(Timeout.class);
-          timeoutDuration = annotation.value();
-          timeoutUnit = annotation.timeUnit();
+        } else {
+          for (
+            Class<?> testClass = extensionContext.getRequiredTestClass();
+            testClass != null;
+            testClass = testClass.isAnnotationPresent(Nested.class) ? testClass.getEnclosingClass() : null
+          ) {
+            if (testClass.isAnnotationPresent(Timeout.class)) {
+              Timeout annotation = testClass.getAnnotation(Timeout.class);
+              timeoutDuration = annotation.value();
+              timeoutUnit = annotation.timeUnit();
+              break;
+            }
+          }
         }
         if (context.awaitCompletion(timeoutDuration, timeoutUnit)) {
           if (context.failed()) {

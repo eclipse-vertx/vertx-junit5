@@ -45,6 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(VertxExtension.class)
 public class Examples {
 
+  HttpClient client;
+
   @ExtendWith(VertxExtension.class)
   class ATest {
     Vertx vertx = Vertx.vertx();
@@ -104,7 +106,7 @@ public class Examples {
 
   @Test
   public void usingVerify(Vertx vertx, VertxTestContext testContext) {
-    HttpClient client = vertx.createHttpClient();
+    client = vertx.createHttpClient();
 
     client.request(HttpMethod.GET, 8080, "localhost", "/")
       .compose(req -> req.send().compose(HttpClientResponse::body))
@@ -129,7 +131,7 @@ public class Examples {
       .onComplete(testContext.succeeding(httpServer -> {
         serverStarted.flag();
 
-        HttpClient client = vertx.createHttpClient();
+        client = vertx.createHttpClient();
         for (int i = 0; i < 10; i++) {
           client.request(HttpMethod.GET, 8888, "localhost", "/")
             .compose(req -> req.send().compose(HttpClientResponse::body))
@@ -161,10 +163,12 @@ public class Examples {
     @ExtendWith(VertxExtension.class)
     class SomeTest {
 
+      HttpClient client;
+
       @Test
       void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
         vertx.deployVerticle(new HttpServerVerticle()).onComplete(testContext.succeeding(id -> {
-          HttpClient client = vertx.createHttpClient();
+          client = vertx.createHttpClient();
           client.request(HttpMethod.GET, 8080, "localhost", "/")
             .compose(req -> req.send().compose(HttpClientResponse::body))
             .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
@@ -195,10 +199,12 @@ public class Examples {
         vertx.deployVerticle(new HttpServerVerticle()).onComplete(testContext.succeedingThenComplete());
       }
 
+      HttpClient client;
+
       // Repeat this test 3 times
       @RepeatedTest(3)
       void http_server_check_response(Vertx vertx, VertxTestContext testContext) {
-        HttpClient client = vertx.createHttpClient();
+        client = vertx.createHttpClient();
         client.request(HttpMethod.GET, 8080, "localhost", "/")
           .compose(req -> req.send().compose(HttpClientResponse::body))
           .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {

@@ -190,13 +190,13 @@ class VertxExtensionTest {
       @Test
       @Tag("programmatic")
       void thisMustAlsoFail(Vertx vertx, VertxTestContext testContext) {
-        vertx.<Integer>executeBlocking(f -> {
+        vertx.<Integer>executeBlocking(() -> {
           try {
             Thread.sleep(500);
           } catch (InterruptedException e) {
             e.printStackTrace();
           }
-          f.complete(69);
+          return 69;
         }).onComplete(testContext.succeeding(i -> testContext.verify(() -> assertEquals(58, i))));
       }
     }

@@ -49,7 +49,7 @@ public class RunTestOnContext implements BeforeAllCallback, InvocationIntercepto
    * Create an instance of this extension that builds a {@link Vertx} object using default options.
    */
   public RunTestOnContext() {
-    this(new VertxOptions());
+    this(new VertxOptions(), false);
   }
 
   /**
@@ -59,8 +59,8 @@ public class RunTestOnContext implements BeforeAllCallback, InvocationIntercepto
    *
    * @param options the vertx options
    */
-  public RunTestOnContext(VertxOptions options) {
-    this(() -> options.getClusterManager() != null ? Vertx.clusteredVertx(options) : Future.succeededFuture(Vertx.vertx(options)));
+  public RunTestOnContext(VertxOptions options, boolean clustered) {
+    this(() -> clustered ? Vertx.clusteredVertx(options) : Future.succeededFuture(Vertx.vertx(options)));
   }
 
   /**

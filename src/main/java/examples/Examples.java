@@ -47,7 +47,6 @@ public class Examples {
 
   HttpClient client;
 
-  @ExtendWith(VertxExtension.class)
   class ATest {
     Vertx vertx = Vertx.vertx();
 
@@ -69,7 +68,6 @@ public class Examples {
     }
   }
 
-  @ExtendWith(VertxExtension.class)
   class BTest {
     Vertx vertx = Vertx.vertx();
 

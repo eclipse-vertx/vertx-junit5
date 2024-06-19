@@ -16,11 +16,7 @@
 
 package io.vertx.junit5;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.internal.NoStackTraceException;
+import io.vertx.core.*;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -125,7 +121,7 @@ public final class VertxTestContext {
    * @param message the cause of failure
    */
   public synchronized void failNow(String message) {
-    failNow(new NoStackTraceException(message));
+    failNow(VertxException.noStackTrace(message));
   }
 
   // ........................................................................................... //

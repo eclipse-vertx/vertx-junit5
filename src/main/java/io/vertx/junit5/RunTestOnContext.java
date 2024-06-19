@@ -17,7 +17,7 @@
 package io.vertx.junit5;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.internal.VertxInternal;
 import org.junit.jupiter.api.extension.*;
 
 import java.lang.reflect.Method;

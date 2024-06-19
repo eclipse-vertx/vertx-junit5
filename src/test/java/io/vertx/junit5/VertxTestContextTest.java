@@ -18,7 +18,7 @@ package io.vertx.junit5;
 
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.NoStackTraceThrowable;
+import io.vertx.core.internal.NoStackTraceException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -464,7 +464,7 @@ class VertxTestContextTest {
     context.failNow("error message");
 
     assertThat(context.failed()).isTrue();
-    assertThat(context.causeOfFailure()).isInstanceOf(NoStackTraceThrowable.class);
+    assertThat(context.causeOfFailure()).isInstanceOf(NoStackTraceException.class);
     assertThat(context.causeOfFailure()).hasMessage("error message");
   }
 }

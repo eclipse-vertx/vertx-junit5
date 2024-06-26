@@ -170,7 +170,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
-            <version>${maven-surefire-plugin.version}</version>
             <configuration>
               <excludedGroups>programmatic</excludedGroups>
               <argLine>--add-opens=java.base/java.util=ALL-UNNAMED</argLine>

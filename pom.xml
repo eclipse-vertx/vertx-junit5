@@ -28,8 +28,13 @@
 
   <name>Vert.x JUnit 5 support :: Core</name>
 
+  <scm>
+    <connection>scm:git:git@github.com:eclipse-vertx/vertx-junit5.git</connection>
+    <developerConnection>scm:git:git@github.com:eclipse-vertx/vertx-junit5.git</developerConnection>
+    <url>git@github.com:eclipse-vertx/vertx-junit5.git</url>
+  </scm>
+
   <properties>
-    <stack.version>5.0.0-SNAPSHOT</stack.version>
     <junit-jupiter.version>5.9.3</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
     <assertj-core.version>3.24.2</assertj-core.version>
@@ -42,7 +47,7 @@
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-dependencies</artifactId>
-        <version>${stack.version}</version>
+        <version>${project.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

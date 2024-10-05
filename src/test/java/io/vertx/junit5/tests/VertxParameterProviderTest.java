@@ -20,6 +20,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxParameterProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledForJreRange;
+import org.junit.jupiter.api.condition.EnabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
@@ -33,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author <a href="https://wissel.net/">Stephan Wisssel</a>
  */
 @DisplayName("Test of VertxParameterProvider")
+@EnabledOnJre(value = JRE.JAVA_11)
 public class VertxParameterProviderTest {
 
   VertxParameterProvider provider = new VertxParameterProvider();

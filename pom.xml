@@ -39,7 +39,6 @@
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
     <assertj-core.version>3.24.2</assertj-core.version>
     <system-lamda.version>1.2.1</system-lamda.version>
-    <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
   </properties>
 
   <dependencyManagement>

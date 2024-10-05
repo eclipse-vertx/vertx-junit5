@@ -38,7 +38,7 @@
     <junit-jupiter.version>5.9.3</junit-jupiter.version>
     <apiguardian-api.version>1.0.0</apiguardian-api.version>
     <assertj-core.version>3.24.2</assertj-core.version>
-    <system-lamda.version>1.2.0</system-lamda.version>
+    <system-lamda.version>1.2.1</system-lamda.version>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
   </properties>
 
@@ -155,6 +155,8 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
+            <!-- Allow black magic -->
+            <argLine>--add-opens java.base/java.util=system.lambda</argLine>
             <excludedGroups>programmatic</excludedGroups>
           </configuration>
         </plugin>

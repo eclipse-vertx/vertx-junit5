@@ -77,7 +77,7 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
 
   @Override
   public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-    return parameterProviders.keySet().contains(parameterType(parameterContext));
+    return parameterProviders.containsKey(parameterType(parameterContext));
   }
 
   private Class<?> parameterType(ParameterContext parameterContext) {

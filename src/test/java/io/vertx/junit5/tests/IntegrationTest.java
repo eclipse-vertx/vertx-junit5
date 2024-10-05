@@ -109,6 +109,8 @@ class IntegrationTest {
   @DisplayName("Tests with parameter injection")
   class WithExtension {
 
+    private HttpClient client;
+
     @Test
     @Timeout(10_000)
     @DisplayName("Start a HTTP server, make 10 client requests, and use several checkpoints")
@@ -127,7 +129,7 @@ class IntegrationTest {
             testContext.failNow(ar.cause());
           } else {
             serverStarted.flag();
-            HttpClient client = vertx.createHttpClient();
+            client = vertx.createHttpClient();
             for (int i = 0; i < 10; i++) {
               client.request(HttpMethod.GET, 8080, "localhost", "/")
                 .flatMap(clientRequest -> clientRequest.send().compose(HttpClientResponse::body))

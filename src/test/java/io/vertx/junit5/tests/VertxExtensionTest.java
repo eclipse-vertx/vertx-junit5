@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package io.vertx.junit5;
+package io.vertx.junit5.tests;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.Timeout;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.launcher.Launcher;
@@ -83,13 +87,13 @@ class VertxExtensionTest {
 
   @Nested
   @ExtendWith(VertxExtension.class)
-  @Timeout(4500)
+  @io.vertx.junit5.Timeout(4500)
   @DisplayName("Specify timeouts")
   class SpecifyTimeout {
 
     @Test
     @DisplayName("Override a class-level timeout")
-    @Timeout(value = 5, timeUnit = TimeUnit.SECONDS)
+    @io.vertx.junit5.Timeout(value = 5, timeUnit = TimeUnit.SECONDS)
     void a(VertxTestContext context) throws InterruptedException {
       Thread.sleep(50);
       context.completeNow();
@@ -160,7 +164,7 @@ class VertxExtensionTest {
 
       @Test
       @Tag("programmatic")
-      @Timeout(value = 1, timeUnit = TimeUnit.SECONDS)
+      @io.vertx.junit5.Timeout(value = 1, timeUnit = TimeUnit.SECONDS)
       void thisMustFail(VertxTestContext testContext) {
         throw new RuntimeException("YOLO");
       }
@@ -264,7 +268,7 @@ class VertxExtensionTest {
       Throwable exception = summary.getFailures().get(0).getException();
       assertThat(exception)
         .isInstanceOf(TimeoutException.class)
-        .hasMessageContaining("checkpoint at io.vertx.junit5.VertxExtensionTest$EmbeddedWithARunner$TimingOut");
+        .hasMessageContaining("checkpoint at io.vertx.junit5.tests.VertxExtensionTest$EmbeddedWithARunner$TimingOut");
     }
   }
 

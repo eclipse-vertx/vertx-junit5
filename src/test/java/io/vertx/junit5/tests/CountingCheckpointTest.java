@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package io.vertx.junit5;
+package io.vertx.junit5.tests;
 
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.CountingCheckpoint;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

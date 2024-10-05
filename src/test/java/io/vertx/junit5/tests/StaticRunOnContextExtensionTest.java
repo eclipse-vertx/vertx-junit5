@@ -14,40 +14,43 @@
  * limitations under the License.
  */
 
-package io.vertx.junit5;
+package io.vertx.junit5.tests;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.junit5.RunTestOnContext;
+import io.vertx.junit5.VertxExtension;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.vertx.junit5.StaticRunOnContextExtensionTest.checkContext;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RunOnContextExtensionTest {
+@ExtendWith({VertxExtension.class})
+public class StaticRunOnContextExtensionTest {
 
   @RegisterExtension
-  RunTestOnContext testOnContext = new RunTestOnContext();
+  static RunTestOnContext testOnContext = new RunTestOnContext();
 
-  AtomicReference<Context> ctxRef = new AtomicReference<>();
+  static AtomicReference<Context> ctxRef = new AtomicReference<>();
 
   @BeforeAll
   static void beforeAll() {
-    assertNull(Vertx.currentContext());
+    Context ctx = Vertx.currentContext();
+    assertNotNull(ctx);
+    assertSame(ctx.owner(), testOnContext.vertx());
+    ctxRef.set(ctx);
   }
 
-  public RunOnContextExtensionTest() {
+  public StaticRunOnContextExtensionTest() {
     assertNull(Vertx.currentContext());
   }
 
   @BeforeEach
   void beforeTest() {
-    Context ctx = Vertx.currentContext();
-    assertNotNull(ctx);
-    assertSame(ctx.owner(), testOnContext.vertx());
-    assertNotSame(ctx, ctxRef.getAndSet(ctx));
+    checkContext(testOnContext.vertx(), ctxRef.get());
   }
 
   @Test
@@ -67,6 +70,13 @@ public class RunOnContextExtensionTest {
 
   @AfterAll
   static void afterAll() {
-    assertNull(Vertx.currentContext());
+    checkContext(testOnContext.vertx(), ctxRef.get());
+  }
+
+  static void checkContext(Vertx expectedVertx, Context expectedContext) {
+    Context ctx = Vertx.currentContext();
+    assertNotNull(ctx);
+    assertSame(expectedVertx, ctx.owner());
+    assertSame(expectedContext, ctx);
   }
 }

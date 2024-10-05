@@ -40,9 +40,9 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
   private static final Logger LOG = LoggerFactory.getLogger(VertxParameterProvider.class);
 
   // Visible for testing
-  static final String VERTX_PARAMETER_FILENAME = "vertx.parameter.filename";
-  static final String VERTX_PARAMETER_FILENAME_ENV_VAR = "VERTX_PARAMETER_FILENAME";
-  static final String VERTX_PARAMETER_FILENAME_SYS_PROP = "vertx.parameter.filename";
+  public static final String VERTX_PARAMETER_FILENAME = "vertx.parameter.filename";
+  public static final String VERTX_PARAMETER_FILENAME_ENV_VAR = "VERTX_PARAMETER_FILENAME";
+  public static final String VERTX_PARAMETER_FILENAME_SYS_PROP = "vertx.parameter.filename";
 
   private static final String DEPRECATION_WARNING = String.format(
     "'%s' environment variable is deprecated and will be removed in a future version, use '%s' instead",

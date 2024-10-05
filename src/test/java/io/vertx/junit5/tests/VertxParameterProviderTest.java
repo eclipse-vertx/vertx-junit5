@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.vertx.junit5;
+package io.vertx.junit5.tests;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.junit5.VertxParameterProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

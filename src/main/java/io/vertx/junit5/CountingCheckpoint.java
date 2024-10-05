@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-final class CountingCheckpoint implements Checkpoint {
+public final class CountingCheckpoint implements Checkpoint {
 
   private final Consumer<Checkpoint> satisfactionTrigger;
   private final Consumer<Throwable> overuseTrigger;
@@ -34,11 +34,11 @@ final class CountingCheckpoint implements Checkpoint {
   private int numberOfPasses = 0;
   private boolean satisfied = false;
 
-  static CountingCheckpoint laxCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, int requiredNumberOfPasses) {
+  public static CountingCheckpoint laxCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, int requiredNumberOfPasses) {
     return new CountingCheckpoint(satisfactionTrigger, null, requiredNumberOfPasses);
   }
 
-  static CountingCheckpoint strictCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, Consumer<Throwable> overuseTrigger, int requiredNumberOfPasses) {
+  public static CountingCheckpoint strictCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, Consumer<Throwable> overuseTrigger, int requiredNumberOfPasses) {
     Objects.requireNonNull(overuseTrigger);
     return new CountingCheckpoint(satisfactionTrigger, overuseTrigger, requiredNumberOfPasses);
   }

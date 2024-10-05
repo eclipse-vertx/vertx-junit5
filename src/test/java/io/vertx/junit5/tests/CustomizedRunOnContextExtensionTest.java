@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package io.vertx.junit5;
+package io.vertx.junit5.tests;
 
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.junit5.RunTestOnContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

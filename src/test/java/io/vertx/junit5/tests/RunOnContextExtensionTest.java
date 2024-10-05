@@ -14,41 +14,41 @@
  * limitations under the License.
  */
 
-package io.vertx.junit5;
+package io.vertx.junit5.tests;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.junit5.RunTestOnContext;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.vertx.junit5.tests.StaticRunOnContextExtensionTest.checkContext;
 import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith({VertxExtension.class})
-public class StaticRunOnContextExtensionTest {
+public class RunOnContextExtensionTest {
 
   @RegisterExtension
-  static RunTestOnContext testOnContext = new RunTestOnContext();
+  RunTestOnContext testOnContext = new RunTestOnContext();
 
-  static AtomicReference<Context> ctxRef = new AtomicReference<>();
+  AtomicReference<Context> ctxRef = new AtomicReference<>();
 
   @BeforeAll
   static void beforeAll() {
-    Context ctx = Vertx.currentContext();
-    assertNotNull(ctx);
-    assertSame(ctx.owner(), testOnContext.vertx());
-    ctxRef.set(ctx);
+    assertNull(Vertx.currentContext());
   }
 
-  public StaticRunOnContextExtensionTest() {
+  public RunOnContextExtensionTest() {
     assertNull(Vertx.currentContext());
   }
 
   @BeforeEach
   void beforeTest() {
-    checkContext(testOnContext.vertx(), ctxRef.get());
+    Context ctx = Vertx.currentContext();
+    assertNotNull(ctx);
+    assertSame(ctx.owner(), testOnContext.vertx());
+    assertNotSame(ctx, ctxRef.getAndSet(ctx));
   }
 
   @Test
@@ -68,13 +68,6 @@ public class StaticRunOnContextExtensionTest {
 
   @AfterAll
   static void afterAll() {
-    checkContext(testOnContext.vertx(), ctxRef.get());
-  }
-
-  static void checkContext(Vertx expectedVertx, Context expectedContext) {
-    Context ctx = Vertx.currentContext();
-    assertNotNull(ctx);
-    assertSame(expectedVertx, ctx.owner());
-    assertSame(expectedContext, ctx);
+    assertNull(Vertx.currentContext());
   }
 }

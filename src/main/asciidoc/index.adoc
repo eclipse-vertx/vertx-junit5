@@ -4,9 +4,25 @@ This module offers integration and support for writing Vert.x tests with JUnit 5
 
 == Use it in your build
 
-* `groupId`: `io.vertx`
-* `artifactId`: `vertx-junit5`
-* `version`: (current Vert.x release or SNAPSHOT)
+To use this component, add the following dependency to the dependencies section of your build descriptor:
+
+* Maven (in your `pom.xml`):
+
+[source,xml,subs="+attributes"]
+----
+<dependency>
+  <groupId>io.vertx</groupId>
+  <artifactId>vertx-junit5</artifactId>
+  <version>${maven.version}</version>
+</dependency>
+----
+
+* Gradle (in your `build.gradle` file):
+
+[source,groovy,subs="+attributes"]
+----
+compile io.vertx:vertx-junit5:${maven.version}
+----
 
 == Why testing asynchronous code is different
 

@@ -16,7 +16,7 @@
 
 package examples;
 
-import io.vertx.core.AbstractVerticle;
+import io.vertx.core.VerticleBase;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientResponse;
@@ -153,7 +153,7 @@ public class Examples {
     }
   }
 
-  class HttpServerVerticle extends AbstractVerticle {
+  class HttpServerVerticle extends VerticleBase {
   }
 
   class DTest {

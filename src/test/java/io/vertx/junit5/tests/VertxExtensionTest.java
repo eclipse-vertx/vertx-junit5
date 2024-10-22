@@ -16,7 +16,7 @@
 
 package io.vertx.junit5.tests;
 
-import io.vertx.core.AbstractVerticle;
+import io.vertx.core.VerticleBase;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.Timeout;
@@ -272,7 +272,7 @@ class VertxExtensionTest {
     }
   }
 
-  private static class UselessVerticle extends AbstractVerticle {
+  private static class UselessVerticle extends VerticleBase {
   }
 
   @Nested

@@ -16,7 +16,7 @@
 
 package examples;
 
-import io.vertx.core.AbstractVerticle;
+import io.vertx.core.VerticleBase;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -63,6 +63,6 @@ class LifecycleExampleTest {
   }
 }
 
-class SomeVerticle extends AbstractVerticle {
+class SomeVerticle extends VerticleBase {
 
 }

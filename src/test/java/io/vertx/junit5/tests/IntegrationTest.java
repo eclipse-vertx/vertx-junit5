@@ -16,9 +16,7 @@
 
 package io.vertx.junit5.tests;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
@@ -42,19 +40,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Integration tests")
 class IntegrationTest {
 
-  static class HttpServerVerticle extends AbstractVerticle {
+  static class HttpServerVerticle extends VerticleBase {
 
     @Override
-    public void start(Promise<Void> startFuture) throws Exception {
-      vertx.createHttpServer()
+    public Future<?> start() throws Exception {
+      return vertx
+        .createHttpServer()
         .requestHandler(request -> request.response().end("Plop"))
-        .listen(8080).onComplete(ar -> {
-          if (ar.succeeded()) {
-            startFuture.complete();
-          } else {
-            startFuture.fail(ar.cause());
-          }
-        });
+        .listen(8080);
     }
   }
 

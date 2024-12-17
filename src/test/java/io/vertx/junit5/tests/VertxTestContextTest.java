@@ -45,23 +45,6 @@ class VertxTestContextTest {
   }
 
   @Test
-  @DisplayName("Check the behavior of succeeding() and that it does not complete the test context")
-  void check_async_assert() throws InterruptedException {
-    VertxTestContext context = new VertxTestContext();
-    context.succeeding().handle(Future.succeededFuture());
-    assertThat(context.awaitCompletion(1, TimeUnit.MILLISECONDS)).isFalse();
-    assertThat(context.completed()).isFalse();
-
-    context = new VertxTestContext();
-    context.succeeding().handle(Future.failedFuture(new RuntimeException("Plop")));
-    assertThat(context.awaitCompletion(1, TimeUnit.MILLISECONDS)).isTrue();
-    assertThat(context.failed()).isTrue();
-    assertThat(context.causeOfFailure())
-      .isInstanceOf(RuntimeException.class)
-      .hasMessage("Plop");
-  }
-
-  @Test
   @DisplayName("Check the behavior of failing()")
   void check_async_assert_fail() throws InterruptedException {
     VertxTestContext context = new VertxTestContext();

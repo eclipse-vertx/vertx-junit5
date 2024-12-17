@@ -184,24 +184,6 @@ public final class VertxTestContext {
   // ........................................................................................... //
 
   /**
-   * Create an asynchronous result handler that expects a success.
-   *
-   * @param <T> the asynchronous result type.
-   * @return the handler.
-   * @deprecated Use {@link #succeedingThenComplete()} or {@link #succeeding(Handler)}, for example
-   * <code>succeeding(value -> checkpoint.flag())</code>, <code>succeeding(value -> { more testing code })</code>, or
-   * <code>succeeding(value -> {})</code>.
-   */
-  @Deprecated
-  public <T> Handler<AsyncResult<T>> succeeding() {
-    return ar -> {
-      if (!ar.succeeded()) {
-        failNow(ar.cause());
-      }
-    };
-  }
-
-  /**
    * Create an asynchronous result handler that expects a success, and passes the value to another handler.
    *
    * @param nextHandler the value handler to call on success that is expected not to throw a {@link Throwable}.

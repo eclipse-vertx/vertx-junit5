@@ -17,65 +17,65 @@
 package io.vertx.junit5.tests;
 
 import io.vertx.core.Context;
-import io.vertx.core.Future;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.RunTestOnContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static io.vertx.junit5.tests.StaticRunOnContextExtensionTest.checkContext;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
-public class CustomizedRunOnContextExtensionTest {
-
-  static AtomicInteger destroyMethodInvocations = new AtomicInteger();
-  Vertx expectedVertx;
+public class RunOnContextExtensionThreadingModelTest {
 
   @RegisterExtension
-  RunTestOnContext testOnContext = new RunTestOnContext(() -> {
-    expectedVertx = Vertx.vertx();
-    return Future.succeededFuture(expectedVertx);
-  }, vertx -> {
-    destroyMethodInvocations.incrementAndGet();
-    assertSame(expectedVertx, vertx);
-    return vertx.close();
-  }, ThreadingModel.EVENT_LOOP);
+  RunTestOnContext testOnContext = new RunTestOnContext(ThreadingModel.VIRTUAL_THREAD);
+
+  AtomicReference<Context> ctxRef = new AtomicReference<>();
+
+  @BeforeAll
+  static void beforeAll() {
+    assertNull(Vertx.currentContext());
+  }
+
+  public RunOnContextExtensionThreadingModelTest() {
+    assertNull(Vertx.currentContext());
+  }
 
   @BeforeEach
   void beforeTest() {
     Context ctx = Vertx.currentContext();
     assertNotNull(ctx);
-    assertSame(expectedVertx, ctx.owner());
+    assertSame(ctx.owner(), testOnContext.vertx());
+    assertNotSame(ctx, ctxRef.getAndSet(ctx));
   }
 
   @Test
   void testMethod1() {
-    Context ctx = Vertx.currentContext();
-    assertNotNull(ctx);
-    assertSame(expectedVertx, ctx.owner());
+    checkContext(testOnContext.vertx(), ctxRef.get());
   }
 
   @Test
   void testMethod2() {
-    Context ctx = Vertx.currentContext();
-    assertNotNull(ctx);
-    assertSame(expectedVertx, ctx.owner());
+    checkContext(testOnContext.vertx(), ctxRef.get());
   }
 
   @AfterEach
   void tearDown() {
-    Context ctx = Vertx.currentContext();
-    assertNotNull(ctx);
-    assertSame(expectedVertx, ctx.owner());
+    checkContext(testOnContext.vertx(), ctxRef.get());
   }
 
   @AfterAll
   static void afterAll() {
-    assertEquals(2, destroyMethodInvocations.get());
+    assertNull(Vertx.currentContext());
   }
 }

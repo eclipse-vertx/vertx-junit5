@@ -221,7 +221,7 @@ https://github.com/reactiverse/reactiverse-junit5-extensions.
 == Parameter ordering
 
 It may be the case that a parameter type has to be placed before another parameter.
-For instance the Web Client support in the `vertx-junit5-extensions` project requires that the `Vertx` argument is before the `WebClient` argument.
+For instance the Web Client support in the `reactiverse-junit5-extensions` project requires that the `Vertx` argument is before the `WebClient` argument.
 This is because the `Vertx` instance needs to exist to create the `WebClient`.
 
 It is expected that parameter providers throw meaningful exceptions to let users know of possible ordering constraints.

@@ -28,6 +28,12 @@
 
   <name>Vert.x JUnit 5 support :: Core</name>
 
+  <scm>
+    <connection>scm:git:git@github.com:eclipse-vertx/vertx-junit5.git</connection>
+    <developerConnection>scm:git:git@github.com:eclipse-vertx/vertx-junit5.git</developerConnection>
+    <url>git@github.com:eclipse-vertx/vertx-junit5.git</url>
+  </scm>
+
   <properties>
     <doc.skip>false</doc.skip>
     <junit-jupiter.version>5.8.2</junit-jupiter.version>

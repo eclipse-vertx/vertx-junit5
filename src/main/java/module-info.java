@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.extension.ParameterResolver;
 
+@SuppressWarnings("module")
 module io.vertx.testing.junit5 {
 
   requires static io.vertx.docgen;

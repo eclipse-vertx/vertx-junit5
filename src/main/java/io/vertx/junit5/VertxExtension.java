@@ -84,6 +84,7 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     return parameterContext.getParameter().getType();
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);

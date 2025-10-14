@@ -1,3 +1,4 @@
+@SuppressWarnings("module")
 open module io.vertx.testing.junit5.tests {
   requires io.vertx.core;
   requires io.vertx.testing.junit5;

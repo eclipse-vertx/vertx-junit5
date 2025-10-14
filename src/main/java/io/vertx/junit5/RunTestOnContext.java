@@ -122,7 +122,7 @@ public class RunTestOnContext implements BeforeAllCallback, InvocationIntercepto
   }
 
   @Override
-  public void interceptDynamicTest(Invocation<Void> invocation, ExtensionContext extensionContext) throws Throwable {
+  public void interceptDynamicTest(Invocation<Void> invocation, DynamicTestInvocationContext invocationContext, ExtensionContext extensionContext) throws Throwable {
     runOnContext(invocation);
   }
 

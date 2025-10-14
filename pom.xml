@@ -196,6 +196,12 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>with-junit6</id>
+      <properties>
+        <junit-jupiter.version>6.0.0</junit-jupiter.version>
+      </properties>
+    </profile>
   </profiles>
 
 </project>

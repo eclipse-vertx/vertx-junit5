@@ -5,5 +5,5 @@ open module io.vertx.testing.junit5.tests {
   requires org.junit.platform.launcher;
   requires org.assertj.core;
   requires org.junit.jupiter.api;
-  requires system.lambda;
+  requires system.stubs.core;
 }

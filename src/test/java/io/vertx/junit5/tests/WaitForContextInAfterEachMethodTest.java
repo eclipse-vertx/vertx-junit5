@@ -36,7 +36,6 @@ public class WaitForContextInAfterEachMethodTest {
       afterTestContextAwaited.set(true);
       context.completeNow();
     });
-
   }
 
 }

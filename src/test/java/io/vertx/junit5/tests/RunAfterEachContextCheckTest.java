@@ -5,7 +5,11 @@ import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.engine.support.descriptor.ClassSource;
-import org.junit.platform.launcher.*;
+import org.junit.platform.launcher.EngineFilter;
+import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.TestExecutionListener;
+import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
@@ -13,7 +17,7 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RunAfterEachContextCheckTest {
 
@@ -27,7 +31,8 @@ class RunAfterEachContextCheckTest {
 
     // Capture the class container result specifically (to assert @AfterAll behavior)
     final AtomicReference<TestExecutionResult.Status> classStatus = new AtomicReference<>();
-    TestExecutionListener captureClassStatus = new TestExecutionListener() {
+
+    final TestExecutionListener captureClassStatus = new TestExecutionListener() {
       @Override
       public void executionFinished(final TestIdentifier id, final TestExecutionResult result) {
         id.getSource()

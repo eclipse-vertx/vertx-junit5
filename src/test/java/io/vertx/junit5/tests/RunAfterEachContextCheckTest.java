@@ -50,7 +50,7 @@ class RunAfterEachContextCheckTest {
     final LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
       .selectors(selector)
       .filters(EngineFilter.includeEngines("junit-jupiter"))
-      // Make @Disabled inert for this run (Option A)
+      // Make @Disabled inert for this run
       .configurationParameter(
         "junit.jupiter.conditions.deactivate", "org.junit.*DisabledCondition")
       // Make execution deterministic

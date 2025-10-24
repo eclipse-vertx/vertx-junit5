@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@Disabled("Executed only via programmatic launcher from MetaTest")
+@Disabled("Executed only via programmatic launcher from RunAfterEachContextCheckTest")
 @ExtendWith({VertxExtension.class})
 public class WaitForContextInAfterEachMethodTest {
   static final AtomicBoolean afterTestContextAwaited = new AtomicBoolean(false);

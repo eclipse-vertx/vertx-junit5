@@ -44,6 +44,7 @@ class VertxTestContextTest {
       .hasMessage("The exception cannot be null");
   }
 
+  @SuppressWarnings("deprecation")
   @Test
   @DisplayName("Check the behavior of failing()")
   void check_async_assert_fail() throws InterruptedException {

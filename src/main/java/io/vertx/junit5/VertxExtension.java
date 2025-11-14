@@ -12,10 +12,17 @@
 package io.vertx.junit5;
 
 import io.vertx.core.Vertx;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.extension.DynamicTestInvocationContext;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -84,6 +91,7 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     return parameterContext.getParameter().getType();
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
     Class<?> type = parameterType(parameterContext);
@@ -164,12 +172,23 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
   @Override
   public void interceptAfterEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
     invocation.proceed();
-    joinActiveTestContexts(extensionContext);
+    joinActiveTestContexts(invocationContext, extensionContext);
   }
 
   private void joinActiveTestContexts(ExtensionContext extensionContext) throws Exception {
+    joinActiveTestContexts(null, extensionContext);
+  }
+
+  private void joinActiveTestContexts(ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Exception {
     if (extensionContext.getExecutionException().isPresent()) {
-      return;
+      final boolean isNotInAfterEachMethod = Optional.ofNullable(invocationContext)
+        .map(ReflectiveInvocationContext::getExecutable)
+        .map(executable -> executable.getAnnotation(AfterEach.class))
+        .isEmpty();
+
+      if (isNotInAfterEachMethod) {
+        return;
+      }
     }
 
     ContextList currentContexts = store(extensionContext).remove(TEST_CONTEXT_KEY, ContextList.class);

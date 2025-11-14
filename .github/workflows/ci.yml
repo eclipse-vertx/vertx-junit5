@@ -11,6 +11,9 @@ on:
       os:
         default: ubuntu-latest
         type: string
+      test-with-junit6:
+        default: false
+        type: boolean
 jobs:
   Test:
     name: Run tests
@@ -27,3 +30,6 @@ jobs:
           distribution: temurin
       - name: Run tests
         run: mvn -s .github/maven-ci-settings.xml -q clean verify -B
+      - name: Run tests with Junit 6
+        if: ${{ inputs.test-with-junit6 }}
+        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B -Pwith-junit6

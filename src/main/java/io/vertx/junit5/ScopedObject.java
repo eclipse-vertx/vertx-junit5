@@ -16,6 +16,8 @@
 
 package io.vertx.junit5;
 
+import org.junit.jupiter.api.extension.ExtensionContext;
+
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -27,7 +29,7 @@ import java.util.function.Supplier;
  * @param <T> Parameter type
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-public class ScopedObject<T> implements Supplier<T>, AutoCloseable  {
+public class ScopedObject<T> implements Supplier<T>, ExtensionContext.Store.CloseableResource, AutoCloseable {
 
   private T object;
   private final ParameterClosingConsumer<T> cleaner;

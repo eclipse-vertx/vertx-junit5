@@ -25,10 +25,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
@@ -121,6 +118,20 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     return object;
   }
 
+  private void initParameters(ExtensionContext extensionContext, ReflectiveInvocationContext<?> invocation) {
+    List<Object> args = invocation.getArguments();
+    for (Object arg : args) {
+      for (Map.Entry<Class<?>, VertxExtensionParameterProvider<?>> entry : parameterProviders.entrySet()) {
+        Class<?> clazz = entry.getKey();
+        if (clazz != VertxTestContext.class && clazz.isInstance(arg)) {
+          VertxExtensionParameterProvider<Object> value = (VertxExtensionParameterProvider<Object>)entry.getValue();
+          value.init(arg, extensionContext);
+          break;
+        }
+      }
+    }
+  }
+
   private VertxTestContext newTestContext(ExtensionContext extensionContext) {
     Store store = store(extensionContext);
     ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
@@ -129,36 +140,47 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     return newTestContext;
   }
 
-  private Store store(ExtensionContext extensionContext) {
+  private static Store store(ExtensionContext extensionContext) {
     return extensionContext.getStore(Namespace.GLOBAL);
+  }
+
+  static <T> List<VertxTestContext> testContextsOf(ExtensionContext extensionContext) {
+    Store store = store(extensionContext);
+    ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
+    return contexts != null ? new ArrayList<>(contexts) : List.of();
   }
 
   @Override
   public void interceptBeforeAllMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    initParameters(extensionContext, invocationContext);
     invocation.proceed();
     joinActiveTestContexts(extensionContext);
   }
 
   @Override
   public void interceptAfterAllMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    initParameters(extensionContext, invocationContext);
     invocation.proceed();
     joinActiveTestContexts(extensionContext);
   }
 
   @Override
   public void interceptTestMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    initParameters(extensionContext, invocationContext);
     invocation.proceed();
     joinActiveTestContexts(extensionContext);
   }
 
   @Override
   public void interceptBeforeEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    initParameters(extensionContext, invocationContext);
     invocation.proceed();
     joinActiveTestContexts(extensionContext);
   }
 
   @Override
   public void interceptTestTemplateMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    initParameters(extensionContext, invocationContext);
     invocation.proceed();
     joinActiveTestContexts(extensionContext);
   }
@@ -171,6 +193,7 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
 
   @Override
   public void interceptAfterEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+    initParameters(extensionContext, invocationContext);
     invocation.proceed();
     joinActiveTestContexts(invocationContext, extensionContext);
   }

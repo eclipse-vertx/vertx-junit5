@@ -49,6 +49,7 @@ public final class VertxTestContext {
   private boolean done = false;
   private final CountDownLatch releaseLatch = new CountDownLatch(1);
   private final HashSet<CountingCheckpoint> checkpoints = new HashSet<>();
+  private int numberOfCheckpoints;
 
   // ........................................................................................... //
 
@@ -90,6 +91,13 @@ public final class VertxTestContext {
       .filter(checkpoint -> !checkpoint.satisfied())
       .map(CountingCheckpoint::creationCallSite)
       .collect(Collectors.toSet());
+  }
+
+  /**
+   * @return the total number of checkpoints that were created
+   */
+  synchronized int numberOfCheckpoints() {
+    return numberOfCheckpoints;
   }
 
   // ........................................................................................... //
@@ -163,6 +171,7 @@ public final class VertxTestContext {
     }
     CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
+    numberOfCheckpoints++;
     return checkpoint;
   }
 
@@ -187,6 +196,7 @@ public final class VertxTestContext {
     }
     CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointSatisfied, this::failNow, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
+    numberOfCheckpoints++;
     return checkpoint;
   }
 

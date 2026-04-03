@@ -64,7 +64,16 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
 
   private static final String TEST_CONTEXT_KEY = "VertxTestContext";
 
-  private static class ContextList extends ArrayList<VertxTestContext> {
+  private static class VertxTestContextEntry {
+    private final VertxTestContext context;
+    private final Checkpoint checkpoint;
+    public VertxTestContextEntry(VertxTestContext context, Checkpoint checkpoint) {
+      this.context = context;
+      this.checkpoint = checkpoint;
+    }
+  }
+
+  private static class ContextList extends ArrayList<VertxTestContextEntry> {
     /*
      * There may be concurrent test contexts to join at a point of time because it is allowed to have several
      * user-defined lifecycle event handles (e.g., @BeforeEach, etc).
@@ -136,7 +145,8 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     Store store = store(extensionContext);
     ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
     VertxTestContext newTestContext = new VertxTestContext();
-    contexts.add(newTestContext);
+    Checkpoint invocationCheckpoint = newTestContext.checkpoint();
+    contexts.add(new VertxTestContextEntry(newTestContext, invocationCheckpoint));
     return newTestContext;
   }
 
@@ -147,7 +157,10 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
   static <T> List<VertxTestContext> testContextsOf(ExtensionContext extensionContext) {
     Store store = store(extensionContext);
     ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
-    return new ArrayList<>(contexts);
+    return contexts
+      .stream()
+      .map(e -> e.context)
+      .collect(Collectors.toList());
   }
 
   @Override
@@ -214,9 +227,16 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
       }
     }
 
-    ContextList currentContexts = store(extensionContext).remove(TEST_CONTEXT_KEY, ContextList.class);
-    if (currentContexts != null) {
-      for (VertxTestContext context : currentContexts) {
+    ContextList current = store(extensionContext).remove(TEST_CONTEXT_KEY, ContextList.class);
+    if (current != null) {
+      for (VertxTestContextEntry entry : current) {
+        VertxTestContext context = entry.context;
+        // Check if the invocation checkpoint is the only one if that is the case
+        // then the method passing relies on completeNow to validate the test
+        if (context.numberOfCheckpoints() != 1) {
+          // Flag invocation checkpoint
+          entry.checkpoint.flag();
+        }
         int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
         TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
         Optional<Method> testMethod = extensionContext.getTestMethod();

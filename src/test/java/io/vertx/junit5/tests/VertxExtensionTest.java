@@ -252,6 +252,37 @@ class VertxExtensionTest {
         .hasMessage("Strict checkpoint flagged too many times");
     }
 
+    @Nested
+    @ExtendWith(VertxExtension.class)
+    @DisplayName("🚫")
+    class KeepVertxTestContextOpenForInvocation {
+
+      @Test
+      @Tag("programmatic")
+      void flagTooMuch(VertxTestContext testContext) {
+        Checkpoint checkpoint1 = testContext.checkpoint();
+        checkpoint1.flag();
+        Checkpoint checkpoint2 = testContext.checkpoint();
+        checkpoint2.flag();
+      }
+    }
+
+    @Test
+    @DisplayName("⚙️ Check that for the duration of the VertxTestContext invocation checkpoint can be created regardless of " +
+      "other checkpoints flagging")
+    void checkKeepVertxTestContextOpenForInvocation() {
+      LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+        .selectors(selectClass(KeepVertxTestContextOpenForInvocation.class))
+        .build();
+      Launcher launcher = LauncherFactory.create();
+      SummaryGeneratingListener listener = new SummaryGeneratingListener();
+      launcher.registerTestExecutionListeners(listener);
+      launcher.execute(request);
+      TestExecutionSummary summary = listener.getSummary();
+      assertThat(summary.getTestsStartedCount()).isEqualTo(1);
+      assertThat(summary.getTestsSucceededCount()).isEqualTo(1);
+    }
+
     @Test
     @DisplayName("⚙️ Check a timeout diagnosis")
     void checkTimeoutFailureTestWithIntermediateAsyncVerifier() {

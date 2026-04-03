@@ -16,6 +16,8 @@
 
 package io.vertx.junit5;
 
+import java.time.Duration;
+
 /**
  * A test completion checkpoint, flagging it advances towards the test context completion.
  *
@@ -28,4 +30,26 @@ public interface Checkpoint {
    * Flags the checkpoint.
    */
   void flag();
+
+  /**
+   * Calls {@link #await(Duration)} with a timeout of 2O seconds.
+   */
+  default void await() {
+    await(Duration.ofSeconds(20));
+  }
+
+  /**
+   * <p>Waits until the checkpoint is satisfied or canceled or the {@code timeout} fires, this can be used
+   * to coordinate the overall flow of a test:</p>
+   * <ul>
+   *   <li>when the checkpoint is satisfied the flow continues and the next statement will be executed</li>
+   *   <li>when the test fails, the checkpoint is cancelled and a {@link java.util.concurrent.CancellationException} is thrown</li>
+   *   <li>when the timeout fires, {@link java.util.concurrent.TimeoutException} is thrown</li>
+   * </ul>
+   * <p>This blocks the thread caller, it should never be used from the event-loop, usually it is called from the JUnit
+   * thread that coordinates with asynchronous parts of the test.</p>
+   *
+   * @param timeout the max wait time.
+   */
+  void await(Duration timeout);
 }

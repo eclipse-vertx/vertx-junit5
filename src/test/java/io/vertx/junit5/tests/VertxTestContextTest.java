@@ -23,11 +23,14 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
@@ -450,5 +453,64 @@ class VertxTestContextTest {
 
     assertThat(context.failed()).isTrue();
     assertThat(context.causeOfFailure()).hasMessage("error message");
+  }
+
+  @Test
+  @DisplayName("Check checkpoint coordination")
+  void check_checkpoint_coordination() {
+    VertxTestContext context = new VertxTestContext();
+    Checkpoint a = context.checkpoint();
+    AtomicBoolean flagged = new AtomicBoolean();
+    Thread thread = Thread.currentThread();
+    new Thread(() -> {
+      while (thread.getState() != Thread.State.TIMED_WAITING) {
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException wontHappen) {
+        }
+      }
+      flagged.set(true);
+      a.flag();
+    }).start();
+    a.await();
+    assertThat(flagged.get());
+  }
+
+  @Test
+  @DisplayName("Check checkpoint cancellation")
+  void check_checkpoint_cancellation() {
+    VertxTestContext context = new VertxTestContext();
+    Checkpoint a = context.checkpoint();
+    AtomicBoolean flagged = new AtomicBoolean();
+    Thread thread = Thread.currentThread();
+    new Thread(() -> {
+      while (thread.getState() != Thread.State.TIMED_WAITING) {
+        try {
+          Thread.sleep(10);
+        } catch (InterruptedException wontHappen) {
+        }
+      }
+      flagged.set(true);
+      context.failNow(new RuntimeException());
+    }).start();
+    try {
+      a.await();
+      fail();
+    } catch (CancellationException ignore) {
+      // Expected
+      assertThat(flagged.get());
+    }
+  }
+
+  @Test
+  @DisplayName("Check checkpoint timeout")
+  void check_checkpoint_timeout() {
+    VertxTestContext context = new VertxTestContext();
+    Checkpoint a = context.checkpoint();
+    try {
+      a.await(Duration.ofMillis(100));
+    } catch (Exception e) {
+      assertSame(TimeoutException.class, e.getClass());
+    }
   }
 }

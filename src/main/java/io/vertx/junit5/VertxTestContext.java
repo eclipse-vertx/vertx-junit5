@@ -107,11 +107,20 @@ public final class VertxTestContext {
    *
    * @param t the cause of failure.
    */
-  public synchronized void failNow(Throwable t) {
+  public void failNow(Throwable t) {
     Objects.requireNonNull(t, "The exception cannot be null");
-    if (throwableReference == null) {
-      throwableReference = t;
-      releaseLatch.countDown();
+    HashSet<CountingCheckpoint> toCancel;
+    synchronized (this) {
+      if (throwableReference == null) {
+        throwableReference = t;
+        releaseLatch.countDown();
+      }
+      // Copy to avoid deadlock
+      toCancel = new HashSet<>(checkpoints);
+    }
+    for (CountingCheckpoint checkpoint : toCancel) {
+      // Cancel any waiter
+      checkpoint.cancel();
     }
   }
 

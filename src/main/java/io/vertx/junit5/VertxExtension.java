@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -56,6 +57,8 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
    * Default timeout unit.
    */
   public static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
+
+  public static final Duration DEFAULT_TIMEOUT = Duration.of(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT.toChronoUnit());
 
   /**
    * Key for all {@link Vertx} instances, including what shims like RxJava should use.

@@ -29,6 +29,8 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -91,6 +93,20 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
         }
       }
     };
+  }
+
+  @Override
+  public void init(Vertx init, ExtensionContext extensionContext) {
+    ReportHandlerFailures annotation = extensionContext.getRequiredTestClass().getAnnotation(ReportHandlerFailures.class);
+    if (annotation != null) {
+      List<VertxTestContext> testContexts = new ArrayList<>(testContextsOf(extensionContext));
+      init.exceptionHandler(failure -> {
+        for (VertxTestContext testContext : testContexts) {
+          testContext.failNow(failure);
+          break;
+        }
+      });
+    }
   }
 
   public JsonObject getVertxOptions() {

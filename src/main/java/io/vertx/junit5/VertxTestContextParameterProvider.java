@@ -47,6 +47,11 @@ public class VertxTestContextParameterProvider implements VertxExtensionParamete
   }
 
   @Override
+  public void init(VertxTestContext init, ExtensionContext extensionContext) {
+    doNotCallMe();
+  }
+
+  @Override
   public ParameterClosingConsumer<VertxTestContext> parameterClosingConsumer() {
     doNotCallMe();
     return null;

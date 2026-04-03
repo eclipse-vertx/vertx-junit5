@@ -147,7 +147,7 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
   static <T> List<VertxTestContext> testContextsOf(ExtensionContext extensionContext) {
     Store store = store(extensionContext);
     ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
-    return contexts != null ? new ArrayList<>(contexts) : List.of();
+    return new ArrayList<>(contexts);
   }
 
   @Override

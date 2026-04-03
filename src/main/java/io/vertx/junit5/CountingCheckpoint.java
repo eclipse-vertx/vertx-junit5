@@ -16,7 +16,10 @@
 
 package io.vertx.junit5;
 
+import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 /**
@@ -33,6 +36,7 @@ public final class CountingCheckpoint implements Checkpoint {
 
   private int numberOfPasses = 0;
   private boolean satisfied = false;
+  private boolean cancelled = false;
 
   public static CountingCheckpoint laxCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, int requiredNumberOfPasses) {
     return new CountingCheckpoint(satisfactionTrigger, null, requiredNumberOfPasses);
@@ -52,6 +56,16 @@ public final class CountingCheckpoint implements Checkpoint {
     this.satisfactionTrigger = satisfactionTrigger;
     this.overuseTrigger = overuseTrigger;
     this.requiredNumberOfPasses = requiredNumberOfPasses;
+  }
+
+  void cancel() {
+    synchronized (this) {
+      if (satisfied || cancelled) {
+        return;
+      }
+      cancelled = true;
+      notifyAll();
+    }
   }
 
   private StackTraceElement findCallSite() {
@@ -76,6 +90,7 @@ public final class CountingCheckpoint implements Checkpoint {
         if (numberOfPasses == requiredNumberOfPasses) {
           callSatisfactionTrigger = true;
           satisfied = true;
+          notifyAll();
         }
       }
     }
@@ -86,11 +101,38 @@ public final class CountingCheckpoint implements Checkpoint {
     }
   }
 
+  @Override
+  public void await(Duration timeout) {
+    if (timeout.isZero() || timeout.isNegative()) {
+      throw new IllegalArgumentException("Invalid timeout");
+    }
+    synchronized (this) {
+      if (!satisfied && !cancelled) {
+        try {
+          wait(timeout.toMillis());
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throwEx(e);
+        }
+        if (cancelled) {
+          throwEx(new CancellationException("Test failed"));
+        }
+        if (!satisfied) {
+          throwEx(new TimeoutException());
+        }
+      }
+    }
+  }
+
   public boolean satisfied() {
     return this.satisfied;
   }
 
   public StackTraceElement creationCallSite() {
     return creationCallSite;
+  }
+
+  private static <E extends Throwable> void throwEx(Throwable t) throws E {
+    throw (E) t;
   }
 }

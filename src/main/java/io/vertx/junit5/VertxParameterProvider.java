@@ -26,12 +26,17 @@ import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -52,27 +57,16 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
     VERTX_PARAMETER_FILENAME_ENV_VAR
   );
 
-  @Override
-  public Class<Vertx> type() {
-    return Vertx.class;
-  }
+  private static final VertxProvider DEFAULT_PROVIDER = new VertxProvider() {
 
-  @Override
-  public String key() {
-    return VertxExtension.VERTX_INSTANCE_KEY;
-  }
-
-  @Override
-  public Vertx newInstance(ExtensionContext extensionContext, ParameterContext parameterContext) {
-
-    final JsonObject parameters = this.getVertxOptions();
-    final VertxOptions options = new VertxOptions(parameters);
-    return Vertx.vertx(options);
-  }
-
-  @Override
-  public ParameterClosingConsumer<Vertx> parameterClosingConsumer() {
-    return vertx -> {
+    @Override
+    public Vertx get() {
+      final JsonObject parameters = getVertxOptions();
+      final VertxOptions options = new VertxOptions(parameters);
+      return Vertx.vertx(options);
+    }
+    @Override
+    public void close(Vertx vertx, Duration timeout) throws Exception {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Throwable> errorBox = new AtomicReference<>();
       vertx.close().onComplete(ar -> {
@@ -81,7 +75,7 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
         }
         latch.countDown();
       });
-      if (!latch.await(DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT)) {
+      if (!latch.await(timeout.toMillis(), TimeUnit.SECONDS)) {
         throw new TimeoutException("Closing the Vertx context timed out");
       }
       Throwable throwable = errorBox.get();
@@ -92,6 +86,63 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
           throw new VertxException(throwable);
         }
       }
+    }
+  };
+
+  @Override
+  public Class<Vertx> type() {
+    return Vertx.class;
+  }
+
+  @Override
+  public String key() {
+    return VertxExtension.VERTX_INSTANCE_KEY;
+  }
+
+  private final WeakHashMap<Vertx, VertxProvider> providers = new WeakHashMap<>();
+
+  @Override
+  public Vertx newInstance(ExtensionContext extensionContext, ParameterContext parameterContext) {
+    Parameter parameter = parameterContext.getParameter();
+    ProvidedBy providedByDecl = parameter.getAnnotation(ProvidedBy.class);
+    VertxProvider provider;
+    if (providedByDecl != null) {
+      Class<? extends VertxProvider> providerClass = providedByDecl.value();
+      try {
+        provider = providerClass.getConstructor().newInstance();
+      } catch (InstantiationException e) {
+        throw new VertxException("Provider " + providerClass.getName() + " is not a concrete class");
+      } catch (IllegalAccessException e) {
+        throw new VertxException("The constructor of " + providerClass.getName() + " is not public");
+      } catch (InvocationTargetException e) {
+        throw new VertxException("Cound not instantiate " + providerClass.getName(), e.getCause());
+      } catch (NoSuchMethodException e) {
+        throw new VertxException("Provider " + providerClass.getName() + " does not have a no arg constructor");
+      }
+    } else {
+      provider = DEFAULT_PROVIDER;
+    }
+    Vertx instance = provider.get();
+    if (instance == null) {
+      throw new NullPointerException("Provider " + provider.getClass().getName() + " yielded a null value");
+    }
+    synchronized (providers) {
+      providers.put(instance, provider);
+    }
+    return instance;
+  }
+
+  @Override
+  public ParameterClosingConsumer<Vertx> parameterClosingConsumer() {
+    return vertx -> {
+      VertxProvider provider;
+      synchronized (providers) {
+        provider = providers.remove(vertx);
+      }
+      if (provider == null) {
+        provider = DEFAULT_PROVIDER;
+      }
+      provider.close(vertx, DEFAULT_TIMEOUT);
     };
   }
 
@@ -109,7 +160,7 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
     }
   }
 
-  public JsonObject getVertxOptions() {
+  public static JsonObject getVertxOptions() {
     String optionFileName = System.getenv(VERTX_PARAMETER_FILENAME_ENV_VAR);
     if (optionFileName == null) {
       optionFileName = System.getProperty(VERTX_PARAMETER_FILENAME_SYS_PROP);

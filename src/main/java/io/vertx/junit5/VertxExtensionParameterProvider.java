@@ -55,8 +55,6 @@ public interface VertxExtensionParameterProvider<T> {
    */
   T newInstance(ExtensionContext extensionContext, ParameterContext parameterContext);
 
-  void init(T init, ExtensionContext extensionContext);
-
   /**
    * A consumer to close the resource.
    *

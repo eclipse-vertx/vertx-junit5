@@ -4,7 +4,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.junit5.*;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -19,9 +18,7 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.time.Duration;
 import java.util.NoSuchElementException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Fail.fail;
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,7 +26,7 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 
 public class VertxParameterProviderLifeCycleTest {
 
-  private static final AssertionError FAILURE = new AssertionError();
+  static final AssertionError FAILURE = new AssertionError();
 
   @ExtendWith(VertxExtension.class)
   public static class TestVertxInstanceClosed {
@@ -56,31 +53,7 @@ public class VertxParameterProviderLifeCycleTest {
   }
 
   @ExtendWith(VertxExtension.class)
-  @ReportHandlerFailures
-  public static class TestFailureWithContext {
-
-    @Test
-    public void test(Vertx vertx, VertxTestContext ctx) throws Exception {
-      CountDownLatch latch = new CountDownLatch(1);
-      vertx.runOnContext(v -> {
-        vertx.runOnContext(v2 -> {
-          latch.countDown();
-        });
-        throw FAILURE;
-      });
-      latch.await(20, TimeUnit.SECONDS);
-    }
-  }
-
-  @Test
-  public void testFailureWithContext() {
-    TestExecutionSummary summary = runTests(TestFailureWithContext.class);
-    assertEquals(1, summary.getFailures().size());
-    assertSame(FAILURE, summary.getFailures().get(0).getException().getCause());
-  }
-
-  @ExtendWith(VertxExtension.class)
-  public static class TestFailureWithContextBare {
+  public static class InstrumentationIsDisabled {
 
     static Handler<Throwable> exceptionHandler;
 
@@ -92,35 +65,10 @@ public class VertxParameterProviderLifeCycleTest {
   }
 
   @Test
-  public void testFailureWithContextBare() {
-    TestExecutionSummary summary = runTests(TestFailureWithContextBare.class);
+  public void testInstrumentationIsDisabled() {
+    TestExecutionSummary summary = runTests(InstrumentationIsDisabled.class);
     assertEquals(0, summary.getFailures().size());
-    assertNull(TestFailureWithContextBare.exceptionHandler);
-  }
-
-  @ExtendWith(VertxExtension.class)
-  @ReportHandlerFailures
-  public static class TestReportFailureBare {
-
-    @Test
-    public void test(Vertx vertx) throws Exception {
-      CountDownLatch latch = new CountDownLatch(1);
-      vertx.runOnContext(v -> {
-        vertx.runOnContext(v2 -> {
-          latch.countDown();
-        });
-        throw FAILURE;
-      });
-      latch.await(20, TimeUnit.SECONDS);
-    }
-  }
-
-  @Disabled("Requires to use a VertxTestContext argument")
-  @Test()
-  public void testReportFailureBare() {
-    TestExecutionSummary summary = runTests(TestReportFailureBare.class);
-    assertEquals(1, summary.getFailures().size());
-    assertSame(FAILURE, summary.getFailures().get(0).getException().getCause());
+    assertNull(InstrumentationIsDisabled.exceptionHandler);
   }
 
   public static class TestProvider implements VertxProvider {
@@ -216,7 +164,7 @@ public class VertxParameterProviderLifeCycleTest {
     assertEquals(NullPointerException.class, pr.getCause().getClass());
   }
 
-  private TestExecutionSummary runTests(Class<?> clazz) {
+  static TestExecutionSummary runTests(Class<?> clazz) {
 
     LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
       .selectors(selectClass(clazz))

@@ -146,20 +146,6 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
     };
   }
 
-  @Override
-  public void init(Vertx init, ExtensionContext extensionContext) {
-    ReportHandlerFailures annotation = extensionContext.getRequiredTestClass().getAnnotation(ReportHandlerFailures.class);
-    if (annotation != null) {
-      List<VertxTestContext> testContexts = new ArrayList<>(testContextsOf(extensionContext));
-      init.exceptionHandler(failure -> {
-        for (VertxTestContext testContext : testContexts) {
-          testContext.failNow(failure);
-          break;
-        }
-      });
-    }
-  }
-
   public static JsonObject getVertxOptions() {
     String optionFileName = System.getenv(VERTX_PARAMETER_FILENAME_ENV_VAR);
     if (optionFileName == null) {

@@ -14,15 +14,9 @@ package io.vertx.junit5;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.extension.DynamicTestInvocationContext;
-import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.*;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
-import org.junit.jupiter.api.extension.InvocationInterceptor;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.junit.jupiter.api.extension.ParameterResolver;
-import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -46,7 +40,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-public final class VertxExtension implements ParameterResolver, InvocationInterceptor {
+public final class VertxExtension implements ParameterResolver, InvocationInterceptor, BeforeAllCallback {
 
   /**
    * Default timeout.
@@ -66,6 +60,8 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
   public static final String VERTX_INSTANCE_KEY = "Vertx";
 
   private static final String TEST_CONTEXT_KEY = "VertxTestContext";
+
+  private static final String TEST_CONFIG = "TestConfig";
 
   private static class VertxTestContextEntry {
     private final VertxTestContext context;
@@ -88,6 +84,39 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
   public VertxExtension() {
     for (VertxExtensionParameterProvider<?> parameterProvider : ServiceLoader.load(VertxExtensionParameterProvider.class)) {
       parameterProviders.put(parameterProvider.type(), parameterProvider);
+    }
+  }
+
+  static boolean instrumentVertx(ExtensionContext context) {
+    Store store = context.getStore(Namespace.GLOBAL);
+    TestConfig config = (TestConfig)store.get(TEST_CONFIG);
+    if (config != null) {
+      return config.instrumentVertx;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Hold context data for the test
+   */
+  private static class TestConfig {
+    private List<VertxTestContextEntry> testContexts;
+    private boolean instrumentVertx;
+  }
+
+  @Override
+  public void beforeAll(ExtensionContext context) throws Exception {
+    Optional<Class<?>> maybeClass = context.getTestClass();
+    if (maybeClass.isPresent()) {
+      Class<?> clazz = maybeClass.get();
+      VertxTest vertxTest = clazz.getAnnotation(VertxTest.class);
+      if (vertxTest != null) {
+        TestConfig config = new TestConfig();
+        config.instrumentVertx = vertxTest.instrumentVertx();
+        Store store = context.getStore(Namespace.GLOBAL);
+        store.put(TEST_CONFIG, config);
+      }
     }
   }
 
@@ -130,17 +159,31 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     return object;
   }
 
-  private void initParameters(ExtensionContext extensionContext, ReflectiveInvocationContext<?> invocation) {
-    List<Object> args = invocation.getArguments();
-    for (Object arg : args) {
-      for (Map.Entry<Class<?>, VertxExtensionParameterProvider<?>> entry : parameterProviders.entrySet()) {
-        Class<?> clazz = entry.getKey();
-        if (clazz != VertxTestContext.class && clazz.isInstance(arg)) {
-          VertxExtensionParameterProvider<Object> value = (VertxExtensionParameterProvider<Object>)entry.getValue();
-          value.init(arg, extensionContext);
+  private void setupVertxInstances(ExtensionContext extensionContext) {
+    Store store = extensionContext.getStore(Namespace.GLOBAL);
+    ScopedObject<Vertx> scopedVertx = (ScopedObject<Vertx>)store.get(VERTX_INSTANCE_KEY);
+    ContextList entries = (ContextList)store.get(TEST_CONTEXT_KEY);
+    if (instrumentVertx(extensionContext) && scopedVertx != null && entries != null) {
+      List<VertxTestContext> testContexts = entries
+        .stream()
+        .map(entry -> entry.context)
+        .collect(Collectors.toList());
+      Vertx vertx = scopedVertx.get();
+      vertx.exceptionHandler(failure -> {
+        for (VertxTestContext context : testContexts) {
+          context.failNow(failure);
           break;
         }
-      }
+      });
+    }
+  }
+
+  private void cleanup(ExtensionContext extensionContext) {
+    Store store = extensionContext.getStore(Namespace.GLOBAL);
+    ScopedObject<Vertx> scopedVertx = (ScopedObject<Vertx>)store.get(VERTX_INSTANCE_KEY);
+    if (instrumentVertx(extensionContext) && scopedVertx != null) {
+      Vertx vertx = scopedVertx.get();
+      vertx.exceptionHandler(null);
     }
   }
 
@@ -157,48 +200,59 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     return extensionContext.getStore(Namespace.GLOBAL);
   }
 
-  static <T> List<VertxTestContext> testContextsOf(ExtensionContext extensionContext) {
-    Store store = store(extensionContext);
-    ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
-    return contexts
-      .stream()
-      .map(e -> e.context)
-      .collect(Collectors.toList());
-  }
-
   @Override
   public void interceptBeforeAllMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
-    initParameters(extensionContext, invocationContext);
-    invocation.proceed();
-    joinActiveTestContexts(extensionContext);
+    setupVertxInstances(extensionContext);
+    try {
+      invocation.proceed();
+      joinActiveTestContexts(extensionContext);
+    } finally {
+      cleanup(extensionContext);
+    }
   }
 
   @Override
   public void interceptAfterAllMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
-    initParameters(extensionContext, invocationContext);
-    invocation.proceed();
-    joinActiveTestContexts(extensionContext);
+    setupVertxInstances(extensionContext);
+    try {
+      invocation.proceed();
+      joinActiveTestContexts(extensionContext);
+    } finally {
+      cleanup(extensionContext);
+    }
   }
 
   @Override
   public void interceptTestMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
-    initParameters(extensionContext, invocationContext);
-    invocation.proceed();
-    joinActiveTestContexts(extensionContext);
+    setupVertxInstances(extensionContext);
+    try {
+      invocation.proceed();
+      joinActiveTestContexts(extensionContext);
+    } finally {
+      cleanup(extensionContext);
+    }
   }
 
   @Override
   public void interceptBeforeEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
-    initParameters(extensionContext, invocationContext);
-    invocation.proceed();
-    joinActiveTestContexts(extensionContext);
+    setupVertxInstances(extensionContext);
+    try {
+      invocation.proceed();
+      joinActiveTestContexts(extensionContext);
+    } finally {
+      cleanup(extensionContext);
+    }
   }
 
   @Override
   public void interceptTestTemplateMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
-    initParameters(extensionContext, invocationContext);
-    invocation.proceed();
-    joinActiveTestContexts(extensionContext);
+    setupVertxInstances(extensionContext);
+    try {
+      invocation.proceed();
+      joinActiveTestContexts(extensionContext);
+    } finally {
+      cleanup(extensionContext);
+    }
   }
 
   @Override
@@ -209,9 +263,13 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
 
   @Override
   public void interceptAfterEachMethod(Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
-    initParameters(extensionContext, invocationContext);
-    invocation.proceed();
-    joinActiveTestContexts(invocationContext, extensionContext);
+    setupVertxInstances(extensionContext);
+    try {
+      invocation.proceed();
+      joinActiveTestContexts(invocationContext, extensionContext);
+    } finally {
+      cleanup(extensionContext);
+    }
   }
 
   private void joinActiveTestContexts(ExtensionContext extensionContext) throws Exception {

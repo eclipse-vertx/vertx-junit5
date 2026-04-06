@@ -166,7 +166,6 @@ public class VertxExtensionAnnotationTest {
     }
   }
 
-  @Disabled("Requires to use a VertxTestContext argument")
   @Test()
   public void testReportFailureBare() {
     TestExecutionSummary summary = VertxParameterProviderLifeCycleTest.runTests(TestReportFailureBare.class);

@@ -162,8 +162,15 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
   private void setupVertxInstances(ExtensionContext extensionContext) {
     Store store = extensionContext.getStore(Namespace.GLOBAL);
     ScopedObject<Vertx> scopedVertx = (ScopedObject<Vertx>)store.get(VERTX_INSTANCE_KEY);
-    ContextList entries = (ContextList)store.get(TEST_CONTEXT_KEY);
-    if (instrumentVertx(extensionContext) && scopedVertx != null && entries != null) {
+    if (instrumentVertx(extensionContext) && scopedVertx != null) {
+      ContextList entries = (ContextList)store.get(TEST_CONTEXT_KEY);
+      if (entries == null) {
+        // Create an implicit test context that is never a parameter but required to report test failures
+        VertxTestContext context = newTestContext(extensionContext);
+        // Fake checkpoint required to switch the test context to checkpoint mode to get the test completed
+        context.checkpoint().flag();
+        entries = (ContextList)store.get(TEST_CONTEXT_KEY);
+      }
       List<VertxTestContext> testContexts = entries
         .stream()
         .map(entry -> entry.context)

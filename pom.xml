@@ -24,7 +24,7 @@
   </parent>
 
   <artifactId>vertx-junit5</artifactId>
-  <version>5.0.11</version>
+  <version>5.0.12-SNAPSHOT</version>
 
   <name>Vert.x JUnit 5 support :: Core</name>
 

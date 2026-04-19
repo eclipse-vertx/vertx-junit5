@@ -29,14 +29,19 @@ import java.util.function.Consumer;
  */
 public final class CountingCheckpoint implements Checkpoint {
 
+  private enum Status {
+    OPEN,
+    SATISFIED,
+    CANCELLED
+  }
+
   private final Consumer<Checkpoint> satisfactionTrigger;
   private final Consumer<Throwable> overuseTrigger;
   private final int requiredNumberOfPasses;
   private final StackTraceElement creationCallSite;
 
   private int numberOfPasses = 0;
-  private boolean satisfied = false;
-  private boolean cancelled = false;
+  private Status status;
 
   public static CountingCheckpoint laxCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, int requiredNumberOfPasses) {
     return new CountingCheckpoint(satisfactionTrigger, null, requiredNumberOfPasses);
@@ -56,14 +61,15 @@ public final class CountingCheckpoint implements Checkpoint {
     this.satisfactionTrigger = satisfactionTrigger;
     this.overuseTrigger = overuseTrigger;
     this.requiredNumberOfPasses = requiredNumberOfPasses;
+    this.status = Status.OPEN;
   }
 
   void cancel() {
     synchronized (this) {
-      if (satisfied || cancelled) {
+      if (status != Status.OPEN) {
         return;
       }
-      cancelled = true;
+      status = Status.CANCELLED;
       notifyAll();
     }
   }
@@ -83,15 +89,20 @@ public final class CountingCheckpoint implements Checkpoint {
     boolean callSatisfactionTrigger = false;
     boolean callOveruseTrigger = false;
     synchronized (this) {
-      if (satisfied) {
-        callOveruseTrigger = true;
-      } else {
-        numberOfPasses = numberOfPasses + 1;
-        if (numberOfPasses == requiredNumberOfPasses) {
-          callSatisfactionTrigger = true;
-          satisfied = true;
-          notifyAll();
-        }
+      switch (status) {
+        case OPEN:
+          numberOfPasses = numberOfPasses + 1;
+          if (numberOfPasses == requiredNumberOfPasses) {
+            callSatisfactionTrigger = true;
+            status = Status.SATISFIED;
+            notifyAll();
+          }
+          break;
+        case SATISFIED:
+          callOveruseTrigger = true;
+          break;
+        default:
+          return;
       }
     }
     if (callSatisfactionTrigger) {
@@ -107,25 +118,25 @@ public final class CountingCheckpoint implements Checkpoint {
       throw new IllegalArgumentException("Invalid timeout");
     }
     synchronized (this) {
-      if (!satisfied && !cancelled) {
+      if (status == Status.OPEN) {
         try {
           wait(timeout.toMillis());
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
           throwEx(e);
         }
-        if (cancelled) {
+        if (status == Status.CANCELLED) {
           throwEx(new CancellationException("Test failed"));
         }
-        if (!satisfied) {
+        if (status != Status.SATISFIED) {
           throwEx(new TimeoutException());
         }
       }
     }
   }
 
-  public boolean satisfied() {
-    return this.satisfied;
+  public synchronized boolean satisfied() {
+    return status == Status.SATISFIED;
   }
 
   public StackTraceElement creationCallSite() {

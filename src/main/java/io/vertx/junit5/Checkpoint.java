@@ -16,6 +16,8 @@
 
 package io.vertx.junit5;
 
+import io.vertx.core.Completable;
+
 import java.time.Duration;
 
 /**
@@ -24,7 +26,7 @@ import java.time.Duration;
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  * @see VertxTestContext
  */
-public interface Checkpoint {
+public interface Checkpoint extends Completable<Void> {
 
   /**
    * Flags the checkpoint.

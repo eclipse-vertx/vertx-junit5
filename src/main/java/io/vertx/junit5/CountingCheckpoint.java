@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -29,13 +30,23 @@ import java.util.function.Consumer;
  */
 public final class CountingCheckpoint implements Checkpoint {
 
+  private static BiConsumer<Checkpoint, Throwable> wrap(Consumer<Checkpoint> consumer) {
+    Objects.requireNonNull(consumer);
+    return (source, err) -> {
+      if (err == null) {
+        consumer.accept(source);
+      }
+    };
+  }
+
   private enum Status {
     OPEN,
     SATISFIED,
+    FAILED,
     CANCELLED
   }
 
-  private final Consumer<Checkpoint> satisfactionTrigger;
+  private final BiConsumer<Checkpoint, Throwable> satisfactionTrigger;
   private final Consumer<Throwable> overuseTrigger;
   private final int requiredNumberOfPasses;
   private final StackTraceElement creationCallSite;
@@ -44,21 +55,29 @@ public final class CountingCheckpoint implements Checkpoint {
   private Status status;
 
   public static CountingCheckpoint laxCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, int requiredNumberOfPasses) {
-    return new CountingCheckpoint(satisfactionTrigger, null, requiredNumberOfPasses);
+    return laxCountingCheckpoint(wrap(satisfactionTrigger), requiredNumberOfPasses);
   }
 
   public static CountingCheckpoint strictCountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, Consumer<Throwable> overuseTrigger, int requiredNumberOfPasses) {
     Objects.requireNonNull(overuseTrigger);
+    return strictCountingCheckpoint(wrap(satisfactionTrigger), overuseTrigger, requiredNumberOfPasses);
+  }
+
+  public static CountingCheckpoint laxCountingCheckpoint(BiConsumer<Checkpoint, Throwable> satisfactionTrigger, int requiredNumberOfPasses) {
+    return new CountingCheckpoint(satisfactionTrigger, null, requiredNumberOfPasses);
+  }
+
+  public static CountingCheckpoint strictCountingCheckpoint(BiConsumer<Checkpoint, Throwable> satisfactionTrigger, Consumer<Throwable> overuseTrigger, int requiredNumberOfPasses) {
+    Objects.requireNonNull(overuseTrigger);
     return new CountingCheckpoint(satisfactionTrigger, overuseTrigger, requiredNumberOfPasses);
   }
 
-  private CountingCheckpoint(Consumer<Checkpoint> satisfactionTrigger, Consumer<Throwable> overuseTrigger, int requiredNumberOfPasses) {
-    Objects.requireNonNull(satisfactionTrigger);
+  private CountingCheckpoint(BiConsumer<Checkpoint, Throwable> completionTrigger, Consumer<Throwable> overuseTrigger, int requiredNumberOfPasses) {
     if (requiredNumberOfPasses <= 0) {
       throw new IllegalArgumentException("A checkpoint needs at least 1 pass");
     }
     this.creationCallSite = findCallSite();
-    this.satisfactionTrigger = satisfactionTrigger;
+    this.satisfactionTrigger = completionTrigger;
     this.overuseTrigger = overuseTrigger;
     this.requiredNumberOfPasses = requiredNumberOfPasses;
     this.status = Status.OPEN;
@@ -85,6 +104,22 @@ public final class CountingCheckpoint implements Checkpoint {
   }
 
   @Override
+  public void complete(Void result, Throwable failure) {
+    if (failure != null) {
+      synchronized (this) {
+        if (status != Status.OPEN) {
+          return;
+        }
+        status = Status.FAILED;
+        notifyAll();
+      }
+      satisfactionTrigger.accept(this, failure);
+    } else {
+      flag();
+    }
+  }
+
+  @Override
   public void flag() {
     boolean callSatisfactionTrigger = false;
     boolean callOveruseTrigger = false;
@@ -106,7 +141,7 @@ public final class CountingCheckpoint implements Checkpoint {
       }
     }
     if (callSatisfactionTrigger) {
-      satisfactionTrigger.accept(this);
+      satisfactionTrigger.accept(this, null);
     } else if (callOveruseTrigger && overuseTrigger != null) {
       overuseTrigger.accept(new IllegalStateException("Strict checkpoint flagged too many times"));
     }
@@ -127,6 +162,9 @@ public final class CountingCheckpoint implements Checkpoint {
         }
         if (status == Status.CANCELLED) {
           throwEx(new CancellationException("Test failed"));
+        }
+        if (status == Status.FAILED) {
+          throwEx(new Exception("Checkpoint failed"));
         }
         if (status != Status.SATISFIED) {
           throwEx(new TimeoutException());

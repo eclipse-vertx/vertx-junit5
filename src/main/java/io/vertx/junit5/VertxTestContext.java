@@ -143,6 +143,14 @@ public final class VertxTestContext {
 
   // ........................................................................................... //
 
+  private void checkpointCompleted(Checkpoint checkpoint, Throwable failure) {
+    if (failure != null) {
+      failNow(failure);
+    } else {
+      checkpointSatisfied(checkpoint);
+    }
+  }
+
   private synchronized void checkpointSatisfied(Checkpoint checkpoint) {
     checkpoints.remove(checkpoint);
     if (checkpoints.isEmpty()) {
@@ -169,7 +177,7 @@ public final class VertxTestContext {
     if (done) {
       throw new IllegalStateException("Context has already been completed");
     }
-    CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
+    CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointCompleted, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     numberOfCheckpoints++;
     return checkpoint;
@@ -194,7 +202,7 @@ public final class VertxTestContext {
     if (done) {
       throw new IllegalStateException("Context has already been completed");
     }
-    CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointSatisfied, this::failNow, requiredNumberOfPasses);
+    CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointCompleted, this::failNow, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     numberOfCheckpoints++;
     return checkpoint;

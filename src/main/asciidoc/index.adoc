@@ -90,8 +90,10 @@ Many tests can be marked as passed by simply calling {@link io.vertx.junit5.Vert
 That being said there are also many cases where the success of a test depends on different asynchronous parts to be validated.
 
 You can use checkpoints to flag some execution points to be passed.
-A {@link io.vertx.junit5.Checkpoint} can require a single flagging, or multiple flags.
-When all checkpoints have been flagged, then the corresponding {@link io.vertx.junit5.VertxTestContext} makes the test pass.
+
+When all checkpoints have been succeeded, then the corresponding {@link io.vertx.junit5.VertxTestContext} makes the test pass.
+
+A latch can be created out of a checkpoint when multiple passes are required
 
 Here is an example with checkpoints on the HTTP server being started, 10 HTTP requests having being responded, and 10 HTTP client requests having been made:
 

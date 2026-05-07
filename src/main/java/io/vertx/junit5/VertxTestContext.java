@@ -175,7 +175,9 @@ public final class VertxTestContext {
    *
    * @param requiredNumberOfPasses the required number of passes to validate the checkpoint.
    * @return a checkpoint that requires several passes; more passes than the required number are allowed and ignored.
+   * @deprecated instead create a regular checkpoint and use {@link Checkpoint#asLatch(int)} to create a latch succeeding this checkpoint
    */
+  @Deprecated
   public synchronized Checkpoint laxCheckpoint(int requiredNumberOfPasses) {
     if (done) {
       throw new IllegalStateException("Context has already been completed");
@@ -200,7 +202,9 @@ public final class VertxTestContext {
    *
    * @param requiredNumberOfPasses the required number of passes to validate the checkpoint.
    * @return a checkpoint that requires several passes, but no more, or it fails the context.
+   * @deprecated instead create a regular checkpoint and use {@link Checkpoint#asLatch(int)} to create a latch succeeding this checkpoint
    */
+  @Deprecated
   public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
     if (done) {
       throw new IllegalStateException("Context has already been completed");

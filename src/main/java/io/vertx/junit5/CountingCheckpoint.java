@@ -19,6 +19,7 @@ package io.vertx.junit5;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -101,6 +102,11 @@ public final class CountingCheckpoint implements Checkpoint {
       }
     }
     return stackTrace[1]; // This can only happen from direct usage of CountingCheckpoint in tests, so the value is irrelevant
+  }
+
+  @Override
+  public CountDownLatch asLatch(int count) {
+    return new Latch(this, count);
   }
 
   @Override

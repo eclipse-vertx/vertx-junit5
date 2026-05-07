@@ -63,22 +63,6 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
 
   private static final String TEST_CONFIG = "TestConfig";
 
-  private static class VertxTestContextEntry {
-    private final VertxTestContext context;
-    private final Checkpoint checkpoint;
-    public VertxTestContextEntry(VertxTestContext context, Checkpoint checkpoint) {
-      this.context = context;
-      this.checkpoint = checkpoint;
-    }
-  }
-
-  private static class ContextList extends ArrayList<VertxTestContextEntry> {
-    /*
-     * There may be concurrent test contexts to join at a point of time because it is allowed to have several
-     * user-defined lifecycle event handles (e.g., @BeforeEach, etc).
-     */
-  }
-
   private final HashMap<Class<?>, VertxExtensionParameterProvider<?>> parameterProviders = new HashMap<>();
 
   public VertxExtension() {
@@ -101,7 +85,6 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
    * Hold context data for the test
    */
   private static class TestConfig {
-    private List<VertxTestContextEntry> testContexts;
     private boolean instrumentVertx;
   }
 
@@ -136,7 +119,9 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     VertxExtensionParameterProvider<?> parameterProvider = parameterProviders.get(type);
 
     if (type.equals(VertxTestContext.class)) {
-      return newTestContext(extensionContext);
+      VertxTestContext ctx = testContext(extensionContext);
+      ctx.numberOfInjections++;
+      return ctx;
     }
 
     if (extensionContext.getParent().isPresent()) {
@@ -163,25 +148,9 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     Store store = extensionContext.getStore(Namespace.GLOBAL);
     ScopedObject<Vertx> scopedVertx = (ScopedObject<Vertx>)store.get(VERTX_INSTANCE_KEY);
     if (instrumentVertx(extensionContext) && scopedVertx != null) {
-      ContextList entries = (ContextList)store.get(TEST_CONTEXT_KEY);
-      if (entries == null) {
-        // Create an implicit test context that is never a parameter but required to report test failures
-        VertxTestContext context = newTestContext(extensionContext);
-        // Fake checkpoint required to switch the test context to checkpoint mode to get the test completed
-        context.checkpoint().flag();
-        entries = (ContextList)store.get(TEST_CONTEXT_KEY);
-      }
-      List<VertxTestContext> testContexts = entries
-        .stream()
-        .map(entry -> entry.context)
-        .collect(Collectors.toList());
+      VertxTestContext ctx = testContext(extensionContext);
       Vertx vertx = scopedVertx.get();
-      vertx.exceptionHandler(failure -> {
-        for (VertxTestContext context : testContexts) {
-          context.failNow(failure);
-          break;
-        }
-      });
+      vertx.exceptionHandler(ctx::failNow);
     }
   }
 
@@ -194,13 +163,13 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
     }
   }
 
-  private VertxTestContext newTestContext(ExtensionContext extensionContext) {
+  private VertxTestContext testContext(ExtensionContext extensionContext) {
     Store store = store(extensionContext);
-    ContextList contexts = (ContextList) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> new ContextList());
-    VertxTestContext newTestContext = new VertxTestContext();
-    Checkpoint invocationCheckpoint = newTestContext.checkpoint();
-    contexts.add(new VertxTestContextEntry(newTestContext, invocationCheckpoint));
-    return newTestContext;
+    return (VertxTestContext) store.getOrComputeIfAbsent(TEST_CONTEXT_KEY, key -> {
+      VertxTestContext ctx = new VertxTestContext();
+      ctx.invocationCheckpoint = ctx.checkpoint();
+      return ctx;
+    });
   }
 
   private static Store store(ExtensionContext extensionContext) {
@@ -295,56 +264,56 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
       }
     }
 
-    ContextList current = store(extensionContext).remove(TEST_CONTEXT_KEY, ContextList.class);
-    if (current != null) {
-      for (VertxTestContextEntry entry : current) {
-        VertxTestContext context = entry.context;
-        // Check if the invocation checkpoint is the only one if that is the case
-        // then the method passing relies on completeNow to validate the test
-        if (context.numberOfCheckpoints() != 1) {
-          // Flag invocation checkpoint
-          entry.checkpoint.flag();
-        }
-        int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
-        TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
-        Optional<Method> testMethod = extensionContext.getTestMethod();
-        if (testMethod.isPresent() && testMethod.get().isAnnotationPresent(Timeout.class)) {
-          Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
-          timeoutDuration = annotation.value();
-          timeoutUnit = annotation.timeUnit();
-        } else {
-          for (
-            Class<?> testClass = extensionContext.getRequiredTestClass();
-            testClass != null;
-            testClass = testClass.isAnnotationPresent(Nested.class) ? testClass.getEnclosingClass() : null
-          ) {
-            if (testClass.isAnnotationPresent(Timeout.class)) {
-              Timeout annotation = testClass.getAnnotation(Timeout.class);
-              timeoutDuration = annotation.value();
-              timeoutUnit = annotation.timeUnit();
-              break;
-            }
+    VertxTestContext context = store(extensionContext).remove(TEST_CONTEXT_KEY, VertxTestContext.class);
+    if (context != null) {
+
+      // Check if the invocation checkpoint is the only one if that is the case
+      // then the method passing relies on completeNow to validate the test
+      if (context.numberOfInjections == 0 || context.numberOfCheckpoints() != 1) {
+        // Flag invocation checkpoint
+        context.invocationCheckpoint.flag();
+      }
+
+
+      int timeoutDuration = DEFAULT_TIMEOUT_DURATION;
+      TimeUnit timeoutUnit = DEFAULT_TIMEOUT_UNIT;
+      Optional<Method> testMethod = extensionContext.getTestMethod();
+      if (testMethod.isPresent() && testMethod.get().isAnnotationPresent(Timeout.class)) {
+        Timeout annotation = extensionContext.getRequiredTestMethod().getAnnotation(Timeout.class);
+        timeoutDuration = annotation.value();
+        timeoutUnit = annotation.timeUnit();
+      } else {
+        for (
+          Class<?> testClass = extensionContext.getRequiredTestClass();
+          testClass != null;
+          testClass = testClass.isAnnotationPresent(Nested.class) ? testClass.getEnclosingClass() : null
+        ) {
+          if (testClass.isAnnotationPresent(Timeout.class)) {
+            Timeout annotation = testClass.getAnnotation(Timeout.class);
+            timeoutDuration = annotation.value();
+            timeoutUnit = annotation.timeUnit();
+            break;
           }
         }
-        if (context.awaitCompletion(timeoutDuration, timeoutUnit)) {
-          if (context.failed()) {
-            Throwable throwable = context.causeOfFailure();
-            if (throwable instanceof Exception) {
-              throw (Exception) throwable;
-            } else {
-              throw new AssertionError(throwable);
-            }
+      }
+      if (context.awaitCompletion(timeoutDuration, timeoutUnit)) {
+        if (context.failed()) {
+          Throwable throwable = context.causeOfFailure();
+          if (throwable instanceof Exception) {
+            throw (Exception) throwable;
+          } else {
+            throw new AssertionError(throwable);
           }
-        } else {
-          String message = "The test execution timed out. Make sure your asynchronous code "
-            + "includes calls to either VertxTestContext#completeNow(), VertxTestContext#failNow() "
-            + "or Checkpoint#flag()";
-          message = message +  context.unsatisfiedCheckpointCallSites()
-            .stream()
-            .map(element -> String.format("-> checkpoint at %s", element))
-            .collect(Collectors.joining("\n", "\n\nUnsatisfied checkpoints diagnostics:\n", ""));
-          throw new TimeoutException(message);
         }
+      } else {
+        String message = "The test execution timed out. Make sure your asynchronous code "
+          + "includes calls to either VertxTestContext#completeNow(), VertxTestContext#failNow() "
+          + "or Checkpoint#flag()";
+        message = message +  context.unsatisfiedCheckpointCallSites()
+          .stream()
+          .map(element -> String.format("-> checkpoint at %s", element))
+          .collect(Collectors.joining("\n", "\n\nUnsatisfied checkpoints diagnostics:\n", ""));
+        throw new TimeoutException(message);
       }
     }
 

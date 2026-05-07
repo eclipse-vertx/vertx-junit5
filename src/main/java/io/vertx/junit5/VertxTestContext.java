@@ -45,6 +45,9 @@ public final class VertxTestContext {
 
   // ........................................................................................... //
 
+  int numberOfInjections;
+  Checkpoint invocationCheckpoint;
+
   private Throwable throwableReference = null;
   private boolean done = false;
   private final CountDownLatch releaseLatch = new CountDownLatch(1);

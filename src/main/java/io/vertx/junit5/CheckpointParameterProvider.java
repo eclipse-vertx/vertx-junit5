@@ -27,11 +27,11 @@ import org.junit.jupiter.api.extension.ParameterContext;
  *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  */
-public class VertxTestContextParameterProvider implements VertxExtensionParameterProvider<VertxTestContext> {
+public class CheckpointParameterProvider implements VertxExtensionParameterProvider<Checkpoint> {
 
   @Override
-  public Class<VertxTestContext> type() {
-    return VertxTestContext.class;
+  public Class<Checkpoint> type() {
+    return Checkpoint.class;
   }
 
   @Override
@@ -41,18 +41,18 @@ public class VertxTestContextParameterProvider implements VertxExtensionParamete
   }
 
   @Override
-  public VertxTestContext newInstance(ExtensionContext extensionContext, ParameterContext parameterContext) {
+  public Checkpoint newInstance(ExtensionContext extensionContext, ParameterContext parameterContext) {
     doNotCallMe();
     return null;
   }
 
   @Override
-  public ParameterClosingConsumer<VertxTestContext> parameterClosingConsumer() {
+  public ParameterClosingConsumer<Checkpoint> parameterClosingConsumer() {
     doNotCallMe();
     return null;
   }
 
-  private ParameterClosingConsumer<VertxTestContext> doNotCallMe() {
-    throw new UnsupportedOperationException("VertxTestContext is a built-in special case");
+  private ParameterClosingConsumer<Checkpoint> doNotCallMe() {
+    throw new UnsupportedOperationException("Checkpoint is a built-in special case");
   }
 }

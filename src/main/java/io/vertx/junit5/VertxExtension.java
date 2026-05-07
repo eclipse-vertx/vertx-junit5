@@ -124,6 +124,11 @@ public final class VertxExtension implements ParameterResolver, InvocationInterc
       return ctx;
     }
 
+    if (type.equals(Checkpoint.class)) {
+      VertxTestContext ctx = testContext(extensionContext);
+      return ctx.checkpoint();
+    }
+
     if (extensionContext.getParent().isPresent()) {
       Store parentStore = store(extensionContext.getParent().get());
       if (parentStore.get(parameterProvider.key()) != null) {

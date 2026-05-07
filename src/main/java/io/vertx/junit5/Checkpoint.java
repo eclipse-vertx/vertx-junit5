@@ -16,7 +16,10 @@
 
 package io.vertx.junit5;
 
+import io.vertx.core.Completable;
+
 import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * A test completion checkpoint, flagging it advances towards the test context completion.
@@ -24,12 +27,20 @@ import java.time.Duration;
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  * @see VertxTestContext
  */
-public interface Checkpoint {
+public interface Checkpoint extends Completable<Void> {
 
   /**
    * Flags the checkpoint.
    */
   void flag();
+
+  /**
+   * Creates a new {@link CountDownLatch} that succeeds this checkpoint when the count reaches 0.
+   *
+   * @param count the latch count
+   * @return the new latch
+   */
+  CountDownLatch asLatch(int count);
 
   /**
    * Calls {@link #await(Duration)} with a timeout of 2O seconds.

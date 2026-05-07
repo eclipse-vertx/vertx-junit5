@@ -45,6 +45,9 @@ public final class VertxTestContext {
 
   // ........................................................................................... //
 
+  int numberOfInjections;
+  Checkpoint invocationCheckpoint;
+
   private Throwable throwableReference = null;
   private boolean done = false;
   private final CountDownLatch releaseLatch = new CountDownLatch(1);
@@ -143,6 +146,14 @@ public final class VertxTestContext {
 
   // ........................................................................................... //
 
+  private void checkpointCompleted(Checkpoint checkpoint, Throwable failure) {
+    if (failure != null) {
+      failNow(failure);
+    } else {
+      checkpointSatisfied(checkpoint);
+    }
+  }
+
   private synchronized void checkpointSatisfied(Checkpoint checkpoint) {
     checkpoints.remove(checkpoint);
     if (checkpoints.isEmpty()) {
@@ -164,12 +175,14 @@ public final class VertxTestContext {
    *
    * @param requiredNumberOfPasses the required number of passes to validate the checkpoint.
    * @return a checkpoint that requires several passes; more passes than the required number are allowed and ignored.
+   * @deprecated instead create a regular checkpoint and use {@link Checkpoint#asLatch(int)} to create a latch succeeding this checkpoint
    */
+  @Deprecated
   public synchronized Checkpoint laxCheckpoint(int requiredNumberOfPasses) {
     if (done) {
       throw new IllegalStateException("Context has already been completed");
     }
-    CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointSatisfied, requiredNumberOfPasses);
+    CountingCheckpoint checkpoint = CountingCheckpoint.laxCountingCheckpoint(this::checkpointCompleted, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     numberOfCheckpoints++;
     return checkpoint;
@@ -189,12 +202,14 @@ public final class VertxTestContext {
    *
    * @param requiredNumberOfPasses the required number of passes to validate the checkpoint.
    * @return a checkpoint that requires several passes, but no more, or it fails the context.
+   * @deprecated instead create a regular checkpoint and use {@link Checkpoint#asLatch(int)} to create a latch succeeding this checkpoint
    */
+  @Deprecated
   public synchronized Checkpoint checkpoint(int requiredNumberOfPasses) {
     if (done) {
       throw new IllegalStateException("Context has already been completed");
     }
-    CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointSatisfied, this::failNow, requiredNumberOfPasses);
+    CountingCheckpoint checkpoint = CountingCheckpoint.strictCountingCheckpoint(this::checkpointCompleted, this::failNow, requiredNumberOfPasses);
     checkpoints.add(checkpoint);
     numberOfCheckpoints++;
     return checkpoint;

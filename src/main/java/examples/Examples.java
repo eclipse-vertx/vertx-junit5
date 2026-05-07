@@ -34,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -118,13 +119,13 @@ public class Examples {
   @Test
   public void checkpointing(Vertx vertx, VertxTestContext testContext) {
     Checkpoint serverStarted = testContext.checkpoint();
-    Checkpoint requestsServed = testContext.checkpoint(10);
-    Checkpoint responsesReceived = testContext.checkpoint(10);
+    CountDownLatch requestsServed = testContext.checkpoint().asLatch(10);
+    CountDownLatch responsesReceived = testContext.checkpoint().asLatch(10);
 
     vertx.createHttpServer()
       .requestHandler(req -> {
         req.response().end("Ok");
-        requestsServed.flag();
+        requestsServed.countDown();
       })
       .listen(8888)
       .onComplete(testContext.succeeding(httpServer -> {
@@ -136,7 +137,7 @@ public class Examples {
             .compose(req -> req.send().compose(HttpClientResponse::body))
             .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
               assertThat(buffer.toString()).isEqualTo("Ok");
-              responsesReceived.flag();
+              responsesReceived.countDown();
             })));
         }
       }));

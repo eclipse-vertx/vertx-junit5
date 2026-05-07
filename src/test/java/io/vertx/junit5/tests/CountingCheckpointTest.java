@@ -67,7 +67,7 @@ class CountingCheckpointTest {
   @Test
   @DisplayName("Refuse null triggers")
   void refuse_null_triggers() {
-    assertThrows(NullPointerException.class, () -> CountingCheckpoint.laxCountingCheckpoint(null, 1));
+    assertThrows(NullPointerException.class, () -> CountingCheckpoint.laxCountingCheckpoint((Consumer<Checkpoint>)null, 1));
     assertThrows(NullPointerException.class, () -> CountingCheckpoint.strictCountingCheckpoint(v -> {
     }, null, 1));
   }

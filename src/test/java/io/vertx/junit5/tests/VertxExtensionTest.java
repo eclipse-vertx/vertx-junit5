@@ -78,10 +78,9 @@ class VertxExtensionTest {
 
     @Test
     @DisplayName("Inject 2 VertxTestContext instances and check they are different")
-    void gimme_2_vertx(VertxTestContext context1, VertxTestContext context2) {
-      assertNotSame(context1, context2);
+    void gimme_2_vertx_contexts(VertxTestContext context1, VertxTestContext context2) {
+      assertSame(context1, context2);
       context1.completeNow();
-      context2.completeNow();
     }
   }
 
@@ -259,7 +258,7 @@ class VertxExtensionTest {
 
       @Test
       @Tag("programmatic")
-      void flagTooMuch(VertxTestContext testContext) {
+      void theTest(VertxTestContext testContext) {
         Checkpoint checkpoint1 = testContext.checkpoint();
         checkpoint1.flag();
         Checkpoint checkpoint2 = testContext.checkpoint();

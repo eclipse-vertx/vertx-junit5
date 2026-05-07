@@ -1,2 +1,3 @@
 io.vertx.junit5.VertxParameterProvider
 io.vertx.junit5.VertxTestContextParameterProvider
+io.vertx.junit5.CheckpointParameterProvider

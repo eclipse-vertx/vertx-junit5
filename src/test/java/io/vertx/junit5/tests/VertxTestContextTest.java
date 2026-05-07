@@ -513,4 +513,35 @@ class VertxTestContextTest {
       assertSame(TimeoutException.class, e.getClass());
     }
   }
+
+  @Test
+  @DisplayName("Check failing a checkpoint")
+  void check_checkpoint_fail() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+
+    Exception failure = new Exception();
+
+    Checkpoint a = context.checkpoint();
+    a.fail(failure);
+
+    assertThat(context.awaitCompletion(500, TimeUnit.MILLISECONDS)).isTrue();
+    assertThat(context.failed()).isTrue();
+    assertThat(context.causeOfFailure())
+      .isSameAs(failure);
+  }
+
+  @Test
+  @DisplayName("Check failing a checkpoint after it succeeded")
+  void check_checkpoint_fail_after_success() throws InterruptedException {
+    VertxTestContext context = new VertxTestContext();
+
+    Exception failure = new Exception();
+
+    Checkpoint a = context.checkpoint();
+    a.flag();
+    a.fail(failure);
+
+    assertThat(context.awaitCompletion(500, TimeUnit.MILLISECONDS)).isTrue();
+    assertThat(context.failed()).isFalse();
+  }
 }

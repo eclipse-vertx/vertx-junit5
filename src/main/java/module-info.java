@@ -16,6 +16,9 @@ module io.vertx.testing.junit5 {
   uses io.vertx.junit5.VertxExtensionParameterProvider;
 
   provides ParameterResolver with io.vertx.junit5.VertxExtension;
-  provides io.vertx.junit5.VertxExtensionParameterProvider with io.vertx.junit5.VertxParameterProvider, io.vertx.junit5.VertxTestContextParameterProvider;
+  provides io.vertx.junit5.VertxExtensionParameterProvider with
+    io.vertx.junit5.VertxParameterProvider,
+    io.vertx.junit5.VertxTestContextParameterProvider,
+    io.vertx.junit5.CheckpointParameterProvider;
 
 }

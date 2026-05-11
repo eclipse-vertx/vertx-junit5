@@ -19,7 +19,6 @@ package io.vertx.junit5;
 import io.vertx.core.Completable;
 
 import java.time.Duration;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -28,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  * @see VertxTestContext
  */
-public interface Checkpoint extends Completable<Objects> {
+public interface Checkpoint extends Completable<Object> {
 
   /**
    * Flags the checkpoint.

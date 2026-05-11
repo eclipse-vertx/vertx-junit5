@@ -110,7 +110,7 @@ public final class CountingCheckpoint implements Checkpoint {
   }
 
   @Override
-  public void complete(Objects result, Throwable failure) {
+  public void complete(Object result, Throwable failure) {
     if (failure != null) {
       synchronized (this) {
         if (status != Status.OPEN) {

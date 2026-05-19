@@ -17,7 +17,7 @@ jobs:
             jdk: 11
             test-with-junit6: false
           - os: ubuntu-latest
-            jdk: 21
+            jdk: 25
             test-with-junit6: ${{ inputs.test-with-junit6 }}
     uses: ./.github/workflows/ci.yml
     with:

@@ -24,6 +24,17 @@ import java.util.concurrent.CountDownLatch;
 /**
  * A test completion checkpoint, flagging it advances towards the test context completion.
  *
+ * <p>A checkpoint extends {@link Completable Completable&lt;Object&gt;}, which means it can be
+ * used as a {@link io.vertx.core.Future} listener. When the future succeeds, the checkpoint is
+ * {@linkplain #flag() flagged}; when the future fails, the error is reported and the test fails.
+ *
+ * <p>Example — using a checkpoint as a future listener:
+ * <pre>{@code
+ * Checkpoint checkpoint = ctx.checkpoint();
+ * vertx.deployVerticle(new MyVerticle())
+ *   .onComplete(checkpoint);
+ * }</pre>
+ *
  * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
  * @see VertxTestContext
  */

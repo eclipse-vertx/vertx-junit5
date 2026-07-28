@@ -16,6 +16,7 @@
 
 package examples;
 
+import io.vertx.core.Future;
 import io.vertx.core.VerticleBase;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
@@ -112,6 +113,32 @@ public class Examples {
       .compose(req -> req.send().compose(HttpClientResponse::body))
       .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
         assertThat(buffer.toString()).isEqualTo("Plop");
+        testContext.completeNow();
+      })));
+  }
+
+  @Test
+  public void usingAssertComplete(Vertx vertx, VertxTestContext testContext) {
+    client = vertx.createHttpClient();
+
+    testContext
+      .assertComplete(client.request(HttpMethod.GET, 8080, "localhost", "/") // <1>
+        .compose(req -> req.send())
+        .compose(HttpClientResponse::body))
+      .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+        assertThat(buffer.toString()).isEqualTo("Plop");
+        testContext.completeNow();
+      })));
+  }
+
+  @Test
+  public void usingAssertFailure(Vertx vertx, VertxTestContext testContext) {
+    testContext
+      .assertFailure(Future.failedFuture(new IllegalStateException("expected failure"))) // <1>
+      .onComplete(testContext.failing(ex -> testContext.verify(() -> {
+        assertThat(ex)
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessage("expected failure");
         testContext.completeNow();
       })));
   }

@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.vertx.junit5.VertxExtension.*;
+import static io.vertx.junit5.VertxExtension.DEFAULT_TIMEOUT;
 
 public class VertxParameterProvider implements VertxExtensionParameterProvider<Vertx> {
 
@@ -73,7 +73,7 @@ public class VertxParameterProvider implements VertxExtensionParameterProvider<V
         }
         latch.countDown();
       });
-      if (!latch.await(timeout.toMillis(), TimeUnit.SECONDS)) {
+      if (!latch.await(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
         throw new TimeoutException("Closing the Vertx context timed out");
       }
       Throwable throwable = errorBox.get();

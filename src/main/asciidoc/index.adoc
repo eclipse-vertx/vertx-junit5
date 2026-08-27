@@ -80,9 +80,36 @@ The useful methods in {@link io.vertx.junit5.VertxTestContext} are the following
 * {@link io.vertx.junit5.VertxTestContext#succeeding} to provide `Handler<AsyncResult<T>>` handlers that expect a success and pass the result to another callback, any exception thrown from the callback is considered as a test failure
 * {@link io.vertx.junit5.VertxTestContext#failing} to provide `Handler<AsyncResult<T>>` handlers that expect a failure and pass the exception to another callback, any exception thrown from the callback is considered as a test failure
 * {@link io.vertx.junit5.VertxTestContext#verify} to perform assertions, any exception thrown from the code block is considered as a test failure.
+* {@link io.vertx.junit5.VertxTestContext#assertComplete} to assert that a `Future` succeeds within a composition chain
+* {@link io.vertx.junit5.VertxTestContext#assertFailure} to assert that a `Future` fails within a composition chain
 
 WARNING: Unlike `succeedingThenComplete` and `failingThenComplete`, calling `succeeding` and `failing` methods can only make a test fail (e.g., `succeeding` gets a failed asynchronous result).
 To make a test pass you still need to call `completeNow`, or use checkpoints as explained below.
+
+== Testing with Future chains
+
+When writing `Future`-based tests, you can compose asynchronous steps and use {@link io.vertx.junit5.VertxTestContext#assertComplete} and {@link io.vertx.junit5.VertxTestContext#assertFailure} to validate intermediate outcomes.
+On the unexpected outcome these helpers fail the test context (`failNow`); they do not complete the test by themselves — still call `completeNow` (or use an explicit checkpoint), as in the examples below.
+
+To assert that a `Future` completes successfully:
+
+[source,java]
+----
+{@link examples.Examples#usingAssertComplete}
+----
+
+<1> {@link io.vertx.junit5.VertxTestContext#assertComplete} returns a `Future` that completes with the same result when the input future succeeds, or fails the test context when the input future fails.
+
+To assert that a `Future` fails as expected:
+
+[source,java]
+----
+{@link examples.Examples#usingAssertFailure}
+----
+
+<1> {@link io.vertx.junit5.VertxTestContext#assertFailure} returns a `Future` that fails with the original cause when the input future fails, or fails the test context when the input future succeeds.
+
+These methods can be chained with {@link io.vertx.core.Future#compose} and {@link io.vertx.core.Future#recover} to express multi-step asynchronous tests with fewer callback-style assertions.
 
 == Checkpoint when there are multiple success conditions
 

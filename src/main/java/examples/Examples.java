@@ -110,10 +110,10 @@ public class Examples {
 
     client.request(HttpMethod.GET, 8080, "localhost", "/")
       .compose(req -> req.send().compose(HttpClientResponse::body))
-      .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+      .onComplete(testContext.succeeding(buffer -> {
         assertThat(buffer.toString()).isEqualTo("Plop");
         testContext.completeNow();
-      })));
+      }));
   }
 
   @Test
@@ -135,10 +135,10 @@ public class Examples {
         for (int i = 0; i < 10; i++) {
           client.request(HttpMethod.GET, 8888, "localhost", "/")
             .compose(req -> req.send().compose(HttpClientResponse::body))
-            .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+            .onComplete(testContext.succeeding(buffer -> {
               assertThat(buffer.toString()).isEqualTo("Ok");
               responsesReceived.countDown();
-            })));
+            }));
         }
       }));
   }
@@ -172,10 +172,10 @@ public class Examples {
           client = vertx.createHttpClient();
           client.request(HttpMethod.GET, 8080, "localhost", "/")
             .compose(req -> req.send().compose(HttpClientResponse::body))
-            .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+            .onComplete(testContext.succeeding(buffer -> {
               assertThat(buffer.toString()).isEqualTo("Plop");
               testContext.completeNow();
-            })));
+            }));
         }));
       }
     }
@@ -209,10 +209,10 @@ public class Examples {
         client = vertx.createHttpClient();
         client.request(HttpMethod.GET, 8080, "localhost", "/")
           .compose(req -> req.send().compose(HttpClientResponse::body))
-          .onComplete(testContext.succeeding(buffer -> testContext.verify(() -> {
+          .onComplete(testContext.succeeding(buffer -> {
             assertThat(buffer.toString()).isEqualTo("Plop");
             testContext.completeNow();
-          })));
+          }));
       }
     }
   }

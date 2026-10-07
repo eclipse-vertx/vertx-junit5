@@ -26,6 +26,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static io.vertx.core.ThreadingModel.EVENT_LOOP;
+
 /**
  * An extension that runs tests on a Vert.x context.
  * <p>
@@ -44,23 +46,43 @@ public class RunTestOnContext implements BeforeAllCallback, InvocationIntercepto
 
   private final Supplier<Future<Vertx>> supplier;
   private final Function<Vertx, Future<Void>> shutdown;
+  private ThreadingModel threadingModel = EVENT_LOOP;
 
   /**
    * Create an instance of this extension that builds a {@link Vertx} object using default options.
    */
   public RunTestOnContext() {
-    this(new VertxOptions(), false);
+    this(new VertxOptions(), false, EVENT_LOOP);
+  }
+
+  /**
+   * Create an instance of this extension that builds a {@link Vertx} object using default options.
+   *
+   * @param threadingModel the threading model used to run the test
+   */
+  public RunTestOnContext(ThreadingModel threadingModel) {
+    this(new VertxOptions(), false, threadingModel);
   }
 
   /**
    * Create an instance of this extension that builds a {@link Vertx} object using the specified {@code options}.
-   * <p>
-   * When the options hold a {@link io.vertx.core.spi.cluster.ClusterManager} instance, a clustered {@link Vertx} object is created.
    *
    * @param options the vertx options
+   * @param clustered  indicate if a clustered {@link Vertx} object will be created
    */
   public RunTestOnContext(VertxOptions options, boolean clustered) {
-    this(() -> clustered ? Vertx.clusteredVertx(options) : Future.succeededFuture(Vertx.vertx(options)));
+    this(() -> clustered ? Vertx.clusteredVertx(options) : Future.succeededFuture(Vertx.vertx(options)), EVENT_LOOP);
+  }
+
+  /**
+   * Create an instance of this extension that builds a {@link Vertx} object using the specified {@code options}.
+   *
+   * @param options the vertx options
+   * @param clustered  indicate if a clustered {@link Vertx} object will be created
+   * @param threadingModel the threading model used to run the test
+   */
+  public RunTestOnContext(VertxOptions options, boolean clustered, ThreadingModel threadingModel) {
+    this(() -> clustered ? Vertx.clusteredVertx(options) : Future.succeededFuture(Vertx.vertx(options)), threadingModel);
   }
 
   /**
@@ -69,7 +91,17 @@ public class RunTestOnContext implements BeforeAllCallback, InvocationIntercepto
    * @param supplier the asynchronous supplier
    */
   public RunTestOnContext(Supplier<Future<Vertx>> supplier) {
-    this(supplier, Vertx::close);
+    this(supplier, Vertx::close, EVENT_LOOP);
+  }
+
+  /**
+   * Create an instance of this extension that gets a {@link Vertx} object using the specified asynchronous {@code supplier}.
+   *
+   * @param supplier the asynchronous supplier
+   * @param threadingModel the threading model used to run the test
+   */
+  public RunTestOnContext(Supplier<Future<Vertx>> supplier, ThreadingModel threadingModel) {
+    this(supplier, Vertx::close, threadingModel);
   }
 
   /**
@@ -82,6 +114,20 @@ public class RunTestOnContext implements BeforeAllCallback, InvocationIntercepto
   public RunTestOnContext(Supplier<Future<Vertx>> supplier, Function<Vertx, Future<Void>> shutdown) {
     this.supplier = supplier;
     this.shutdown = shutdown;
+  }
+
+  /**
+   * Create an instance of this extension that gets a {@link Vertx} object using the specified asynchronous {@code supplier}.
+   * The asynchronous {@code shutdown} function is invoked when the {@link Vertx} object is no longer needed.
+   *
+   * @param supplier the asynchronous supplier
+   * @param shutdown the asynchronous shutdown function
+   * @param threadingModel the threading model used to run the test
+   */
+  public RunTestOnContext(Supplier<Future<Vertx>> supplier, Function<Vertx, Future<Void>> shutdown, ThreadingModel threadingModel) {
+    this.supplier = supplier;
+    this.shutdown = shutdown;
+    this.threadingModel = threadingModel;
   }
 
   /**
@@ -143,7 +189,11 @@ public class RunTestOnContext implements BeforeAllCallback, InvocationIntercepto
     } else {
       vertxFuture = supplier.get().onSuccess(vertx -> {
         this.vertx = vertx;
-        context = ((VertxInternal) vertx).createEventLoopContext();
+        if (ThreadingModel.VIRTUAL_THREAD.equals(this.threadingModel)) {
+          context = ((VertxInternal) vertx).createVirtualThreadContext();
+        } else {
+          context = ((VertxInternal) vertx).createEventLoopContext();
+        }
       });
     }
     CompletableFuture<T> cf = vertxFuture
